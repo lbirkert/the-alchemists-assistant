@@ -1,25 +1,29 @@
 use crate::prelude::*;
 
-use crate::camera::PlayerPlugin;
-
-mod camera;
+mod player;
 mod prelude;
+mod settings;
 mod state;
 
 pub fn main() -> AppExit {
-    App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: "The Alchemists Assistant".to_string(),
-                ..Default::default()
-            }),
+    let mut app = App::new();
+    // Bevy plugins
+    app.add_plugins(DefaultPlugins.set(WindowPlugin {
+        primary_window: Some(Window {
+            title: "The Alchemists Assistant".to_string(),
             ..Default::default()
-        }))
-        .add_plugins(PlayerPlugin)
-        .add_plugins(state::plugin)
-        .add_systems(Startup, spawn_scene)
-        // TODO:
-        .run()
+        }),
+        ..Default::default()
+    }));
+
+    // Ecosystem plugins
+    app.add_plugins(PhysicsPlugins::default());
+
+    // Our plugins
+    app.add_plugins((state::plugin, settings::plugin, player::plugin))
+        .add_systems(Startup, spawn_scene);
+
+    app.run()
 }
 
 pub fn spawn_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
