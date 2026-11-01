@@ -1,9 +1,10 @@
-use bevy::prelude::*;
+use crate::prelude::*;
 
-use crate::{camera::PlayerPlugin, state::state_plugin};
+use crate::camera::PlayerPlugin;
 
-pub mod camera;
-pub mod state;
+mod camera;
+mod prelude;
+mod state;
 
 pub fn main() -> AppExit {
     App::new()
@@ -15,7 +16,7 @@ pub fn main() -> AppExit {
             ..Default::default()
         }))
         .add_plugins(PlayerPlugin)
-        .add_plugins(state_plugin)
+        .add_plugins(state::plugin)
         .add_systems(Startup, spawn_scene)
         // TODO:
         .run()

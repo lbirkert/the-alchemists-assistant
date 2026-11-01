@@ -1,11 +1,36 @@
 // code from https://github.com/sburris0/bevy_flycam/blob/master/src/lib.rs
 
+use crate::prelude::*;
+
 use bevy::input::mouse::MouseMotion;
-use bevy::prelude::*;
 use bevy::window::{CursorGrabMode, CursorOptions, PrimaryWindow};
 
-pub mod prelude {
-    pub use crate::*;
+/// Contains everything needed to add first-person fly camera behavior to your game
+pub struct PlayerPlugin;
+impl Plugin for PlayerPlugin {
+    fn build(&self, app: &mut App) {
+        common_build(app);
+        app.add_systems(Startup, setup_player);
+    }
+}
+
+/// Same as [`PlayerPlugin`] but does not spawn a camera
+pub struct NoCameraPlayerPlugin;
+impl Plugin for NoCameraPlayerPlugin {
+    fn build(&self, app: &mut App) {
+        common_build(app);
+    }
+}
+
+/// Common build steps for both PlayerPlugin and NoCameraPlayerPlugin
+fn common_build(app: &mut App) {
+    app.init_resource::<MovementSettings>()
+        .init_resource::<KeyBindings>()
+        .add_systems(Startup, initial_grab_cursor)
+        .add_systems(Startup, initial_grab_on_flycam_spawn)
+        .add_systems(Update, player_move)
+        .add_systems(Update, player_look)
+        .add_systems(Update, cursor_grab);
 }
 
 /// Mouse sensitivity and movement speed
@@ -180,32 +205,4 @@ fn initial_grab_on_flycam_spawn(
     }
 
     toggle_grab_cursor(primary_cursor_options);
-}
-
-/// Contains everything needed to add first-person fly camera behavior to your game
-pub struct PlayerPlugin;
-impl Plugin for PlayerPlugin {
-    fn build(&self, app: &mut App) {
-        common_build(app);
-        app.add_systems(Startup, setup_player);
-    }
-}
-
-/// Same as [`PlayerPlugin`] but does not spawn a camera
-pub struct NoCameraPlayerPlugin;
-impl Plugin for NoCameraPlayerPlugin {
-    fn build(&self, app: &mut App) {
-        common_build(app);
-    }
-}
-
-/// Common build steps for both PlayerPlugin and NoCameraPlayerPlugin
-fn common_build(app: &mut App) {
-    app.init_resource::<MovementSettings>()
-        .init_resource::<KeyBindings>()
-        .add_systems(Startup, initial_grab_cursor)
-        .add_systems(Startup, initial_grab_on_flycam_spawn)
-        .add_systems(Update, player_move)
-        .add_systems(Update, player_look)
-        .add_systems(Update, cursor_grab);
 }
