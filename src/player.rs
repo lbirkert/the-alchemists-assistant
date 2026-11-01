@@ -8,7 +8,14 @@ use crate::{prelude::*, settings::MovementSettings};
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(ON_GAME_ENTER, (spawn_player, initial_grab_cursor));
 
-    app.add_systems(GameRunning, (cursor_grab, player_move, player_look));
+    app.add_systems(
+        GameRunning,
+        (
+            cursor_grab,
+            player_look.before(player_move),
+            player_move.in_set(PhysicsSystems::First),
+        ),
+    );
 }
 
 #[derive(Component, Reflect, Default, Clone, Copy)]
@@ -29,8 +36,13 @@ fn spawn_player(mut commands: Commands) {
                 y: 1.
             }
         }
+        Visibility::Inherited
         RigidBody::Dynamic
-        Collider::capsule(0.5, 1.8)
+        Collider::capsule(0.4, 1.8)
+        DebugRender::none()
+        LockedAxes::ROTATION_LOCKED
+        Mass(10.)
+        NoAutoMass
         Children [
             #PlayerCamera
             Camera3d

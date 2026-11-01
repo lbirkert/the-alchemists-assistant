@@ -1,9 +1,12 @@
 use crate::prelude::*;
 
+mod debug;
 mod player;
 mod prelude;
+mod scene;
 mod settings;
 mod state;
+mod utils;
 
 pub fn main() -> AppExit {
     let mut app = App::new();
@@ -19,9 +22,18 @@ pub fn main() -> AppExit {
     // Ecosystem plugins
     app.add_plugins(PhysicsPlugins::default());
 
+    app.add_plugins(bevy_skein::SkeinPlugin::default());
+
     // Our plugins
-    app.add_plugins((state::plugin, settings::plugin, player::plugin))
-        .add_systems(Startup, spawn_scene);
+    app.add_plugins((
+        state::plugin,
+        settings::plugin,
+        utils::plugin,
+        debug::plugin,
+        scene::plugin,
+        player::plugin,
+    ))
+    .add_systems(Startup, spawn_scene);
 
     app.run()
 }
@@ -38,55 +50,6 @@ pub fn spawn_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
         },
         Transform::from_translation(Vec3::new(0.0, WALL_HEIGHT - 0.2, 0.0)),
     ));
-
-    // floor + ceil
-    commands.spawn_scene(bsn! {
-        Mesh3d(asset_value(Plane3d::new(
-            Vec3::new(0.0, 1.0, 0.0),
-            Vec2::new(FLOOR_SIZE / 2.0, FLOOR_SIZE / 2.0),
-        )))
-        MeshMaterial3d::<StandardMaterial>(asset_value(Color::srgba(0.6, 0.6, 0.6, 1.0)))
-        Transform::from_translation(Vec3::new(0.0, 0.0, 0.0))
-    });
-    commands.spawn_scene(bsn! {
-        Mesh3d(asset_value(Plane3d::new(
-            Vec3::new(0.0, -1.0, 0.0),
-            Vec2::new(FLOOR_SIZE / 2.0, FLOOR_SIZE / 2.0),
-        )))
-        MeshMaterial3d::<StandardMaterial>(asset_value(Color::srgba(0.6, 0.6, 0.6, 1.0)))
-        Transform::from_translation(Vec3::new(0.0, WALL_HEIGHT, 0.0))
-    });
-
-    // walls
-    commands.spawn_scene_list(bsn_list! {
-        Mesh3d(asset_value(Plane3d::new(
-            Vec3::new(1.0, 0.0, 0.0),
-            Vec2::new(WALL_HEIGHT / 2.0, FLOOR_SIZE / 2.0),
-        )))
-        MeshMaterial3d::<StandardMaterial>(asset_value(Color::srgba(1.0, 1.0, 1.0, 1.0)))
-        Transform::from_translation(Vec3::new(-FLOOR_SIZE / 2.0, WALL_HEIGHT / 2.0, 0.0))
-        --
-        Mesh3d(asset_value(Plane3d::new(
-            Vec3::new(-1.0, 0.0, 0.0),
-            Vec2::new(WALL_HEIGHT / 2.0, FLOOR_SIZE / 2.0),
-        )))
-        MeshMaterial3d::<StandardMaterial>(asset_value(Color::srgba(1.0, 1.0, 1.0, 1.0)))
-        Transform::from_translation(Vec3::new(FLOOR_SIZE / 2.0, WALL_HEIGHT / 2.0, 0.0))
-        --
-        Mesh3d(asset_value(Plane3d::new(
-            Vec3::new(0.0, 0.0, 1.0),
-            Vec2::new(FLOOR_SIZE / 2.0, WALL_HEIGHT / 2.0),
-        )))
-        MeshMaterial3d::<StandardMaterial>(asset_value(Color::srgba(1.0, 1.0, 1.0, 1.0)))
-        Transform::from_translation(Vec3::new(0.0, WALL_HEIGHT / 2.0, -FLOOR_SIZE / 2.0))
-        --
-        Mesh3d(asset_value(Plane3d::new(
-            Vec3::new(0.0, 0.0, -1.0),
-            Vec2::new(FLOOR_SIZE / 2.0, WALL_HEIGHT / 2.0),
-        )))
-        MeshMaterial3d::<StandardMaterial>(asset_value(Color::srgba(1.0, 1.0, 1.0, 1.0)))
-        Transform::from_translation(Vec3::new(0.0, WALL_HEIGHT / 2.0, FLOOR_SIZE / 2.0))
-    });
 
     // tables
     commands.spawn_scene_list(bsn_list! {

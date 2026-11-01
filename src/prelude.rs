@@ -1,3 +1,4 @@
+pub use crate::scene::EnvironmentObject;
 pub use crate::settings::KeyBindings;
 pub use crate::state::{GameRunning, GameState, ON_GAME_ENTER, ON_GAME_EXIT};
 
