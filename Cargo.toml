@@ -10,6 +10,7 @@ bevy = { version = "0.20", default-features = false, features = [
   "ui",
   "audio",
   "serialize",
+  "bevy_gltf",
 ] }
 bevy-inspector-egui = "0.38"
 bevy_easings = "0.20"
