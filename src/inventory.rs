@@ -40,7 +40,6 @@ impl HerbKind {
         bsn! {
             Mesh3d(asset_value(Cuboid::new(0.5, 0.5, 0.5)))
             MeshMaterial3d::<StandardMaterial>(asset_value(Color::BLACK))
-            Collider::sphere(0.5)
         }
     }
 }

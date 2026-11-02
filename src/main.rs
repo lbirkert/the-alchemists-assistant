@@ -1,6 +1,7 @@
 use crate::prelude::*;
 
 mod debug;
+mod game_layer;
 mod inventory;
 mod player;
 mod prelude;
