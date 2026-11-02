@@ -7,6 +7,7 @@ mod player;
 mod prelude;
 mod scene;
 mod settings;
+mod sounds;
 mod state;
 mod utils;
 
@@ -33,6 +34,7 @@ pub fn main() -> AppExit {
         utils::plugin,
         debug::plugin,
         scene::plugin,
+        sounds::plugin,
         player::plugin,
         inventory::plugin,
     ));

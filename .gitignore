@@ -2,3 +2,6 @@ target/
 .DS_Store
 *.blend
 *.blend1
+*.aup3*
+*.mp3
+*.m4a

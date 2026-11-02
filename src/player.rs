@@ -3,7 +3,9 @@ use bevy::{
     window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
 
-use crate::{inventory::Inventory, prelude::*, settings::MovementSettings};
+use crate::{
+    inventory::Inventory, prelude::*, settings::MovementSettings, sounds::movement::IsMoving,
+};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(ON_GAME_ENTER, (spawn_player, initial_grab_cursor));
@@ -69,6 +71,10 @@ fn spawn_player(mut commands: Commands) {
                 PlayerRightHand
                 Transform::from_xyz(0.175, -0.4, -1.).with_scale(Vec3::splat(0.3))
             ]
+            --
+            #PlayerEars
+            // Space between the ears
+            SpatialListener::new(0.5)
         ]
     });
 }
@@ -104,13 +110,15 @@ fn initial_grab_cursor(primary_cursor_options: Single<&mut CursorOptions, With<P
 
 /// Handles keyboard input and movement
 fn player_move(
+    mut commands: Commands,
     keys: Res<ButtonInput<KeyCode>>,
     primary_cursor_options: Single<&mut CursorOptions, With<PrimaryWindow>>,
     settings: Res<MovementSettings>,
     key_bindings: Res<KeyBindings>,
-    mut player_velocity: Single<&mut LinearVelocity, With<Player>>,
+    mut player_velocity: Single<(Entity, &mut LinearVelocity, Has<IsMoving>), With<Player>>,
     camera_transform: Single<&Transform, With<PlayerEyes>>,
 ) {
+    let (entity, velocity, has_moving) = &mut *player_velocity;
     let mut direction = Vec3::ZERO;
 
     for key in keys.get_pressed() {
@@ -131,12 +139,18 @@ fn player_move(
         }
     }
 
+    if direction != Vec3::ZERO && !*has_moving {
+        commands.entity(*entity).insert(IsMoving::default());
+    } else if direction == Vec3::ZERO && *has_moving {
+        commands.entity(*entity).remove::<IsMoving>();
+    }
+
     let (yaw, _pitch, _roll) = camera_transform.rotation.to_euler(EulerRot::YXZ);
     direction = Quat::from_rotation_y(yaw) * direction.normalize_or_zero();
 
     let v = direction * settings.speed;
-    player_velocity.0.x = v.x;
-    player_velocity.0.z = v.z;
+    velocity.0.x = v.x;
+    velocity.0.z = v.z;
 }
 
 /// Handles looking around if cursor is locked
