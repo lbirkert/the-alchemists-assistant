@@ -60,10 +60,6 @@ fn spawn_player(mut commands: Commands) {
         Mass(10.)
         NoAutoMass
         Children [
-            ShapeCaster {
-                direction: {Dir3::from_xyz(0.0, 0.0, -1.0).unwrap()},
-                max_hits: 2,
-            }
             #PlayerCamera
             Camera3d
             MeshPickingCamera

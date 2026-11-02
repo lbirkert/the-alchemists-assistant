@@ -1,10 +1,7 @@
-use bevy::{
-    input::common_conditions::{input_just_pressed, input_toggle_active},
-    picking::pointer::PointerInteraction,
-};
+use bevy::input::common_conditions::{input_just_pressed, input_toggle_active};
 use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 
-use crate::{player::PlayerCursor, prelude::*};
+use crate::prelude::*;
 
 const DEBUG_ENABLED_DEFAULT: bool = cfg!(debug_assertions);
 
@@ -43,6 +40,7 @@ fn toggle_physics_gizmo(mut store: ResMut<GizmoConfigStore>) {
     }
 }
 
+/// see <https://docs.rs/bevy/0.20.1/bevy/picking/pointer/struct.PointerInteraction.html#scraped-examples>
 fn draw_mesh_intersections(
     pointers: Query<&PointerInteraction, With<PlayerCursor>>,
     mut gizmos: Gizmos,

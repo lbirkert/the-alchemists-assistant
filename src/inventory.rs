@@ -1,3 +1,5 @@
+use bevy::picking::backend::HitData;
+
 use crate::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
@@ -87,6 +89,7 @@ impl Item {
             LinearVelocity(vel)
             Transform::from_translation(pos)
             Collider::sphere(ITEM_SIZE/2.0)
+            Pickable
             @scene
         }
     }
@@ -103,28 +106,24 @@ fn pickup_item(
     mut commands: Commands,
     input: Res<ButtonInput<MouseButton>>,
     mut inventory: Single<&mut Inventory>,
-    hits_query: Query<&ShapeHits>,
+    pointer: Single<&PointerInteraction, With<PlayerCursor>>,
     items: Query<(&Item, &Transform)>,
 ) {
     if !input.just_pressed(MouseButton::Right) {
         return;
     }
 
-    for hits in hits_query {
-        for hit in hits.iter_sorted() {
-            let Ok((item, item_transform)) = items.get(hit.entity) else {
-                continue;
-            };
-
-            let old_item = std::mem::replace(&mut inventory.item, Some(item.clone()));
-            if let Some(old_item) = old_item {
-                let item_scene = old_item.physics_scene(item_transform.translation, Vec3::ZERO);
-                commands.spawn_scene(item_scene);
-            }
-
-            // destroy old item
-            commands.entity(hit.entity).despawn();
+    if let Some((entity, _hit)) = pointer.get_nearest_hit()
+        && let Ok((item, item_transform)) = items.get(*entity)
+    {
+        let old_item = inventory.item.replace(*item);
+        if let Some(old_item) = old_item {
+            let item_scene = old_item.physics_scene(item_transform.translation, Vec3::ZERO);
+            commands.spawn_scene(item_scene);
         }
+
+        // destroy old item
+        commands.entity(*entity).despawn();
     }
 }
 
@@ -132,28 +131,31 @@ fn place_item(
     mut commands: Commands,
     input: Res<ButtonInput<MouseButton>>,
     mut inventory: Single<&mut Inventory>,
-    hits_query: Query<&ShapeHits>,
+    pointer: Single<&PointerInteraction, With<PlayerCursor>>,
     locations: Query<&Transform, With<ItemsPlaceable>>,
 ) {
     if !input.just_pressed(MouseButton::Right) {
         return;
     }
 
-    for hits in hits_query {
-        for hit in hits.iter_sorted() {
-            if locations.get(hit.entity).is_err() {
-                continue;
-            }
-
-            let Some(item) = inventory.item.take() else {
-                return;
-            };
-
-            let item_scene =
-                item.physics_scene(hit.point1 + hit.normal1 * ITEM_SIZE / 2.0, Vec3::ZERO);
-            commands.spawn_scene(item_scene);
-
+    if let Some((
+        entity,
+        HitData {
+            position: Some(position),
+            normal: Some(normal),
+            ..
+        },
+    )) = pointer.get_nearest_hit()
+    {
+        if locations.get(*entity).is_err() {
             return;
         }
+
+        let Some(item) = inventory.item.take() else {
+            return;
+        };
+
+        let item_scene = item.physics_scene(position + normal * ITEM_SIZE / 2.0, Vec3::ZERO);
+        commands.spawn_scene(item_scene);
     }
 }
