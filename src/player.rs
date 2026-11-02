@@ -1,5 +1,7 @@
 use bevy::{
+    camera::RenderTarget,
     input::mouse::MouseMotion,
+    picking::pointer::{Location, PointerId, PointerLocation},
     window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
 
@@ -14,6 +16,7 @@ pub(super) fn plugin(app: &mut App) {
         GameRunning,
         (
             cursor_grab,
+            add_pointer,
             update_player_item_preview,
             player_look.before(player_move),
             player_move.in_set(PhysicsSystems::First),
@@ -59,6 +62,7 @@ fn spawn_player(mut commands: Commands) {
         Children [
             #PlayerCamera
             Camera3d
+            MeshPickingCamera
             PlayerEyes
             CollisionLayers::new(GameLayer::Default, [GameLayer::Pickable, GameLayer::Environment])
             Transform {
@@ -77,6 +81,37 @@ fn spawn_player(mut commands: Commands) {
             SpatialListener::new(0.5)
         ]
     });
+}
+
+#[derive(Component, Reflect, Default, Clone, Copy)]
+#[reflect(Component)]
+pub struct PlayerCursor;
+
+fn add_pointer(
+    mut commands: Commands,
+    camera: Single<(&Camera, &RenderTarget), Added<Camera3d>>,
+    window: Single<Entity, With<PrimaryWindow>>,
+) {
+    let (camera, target) = *camera;
+    let Some(position) = camera.logical_viewport_size() else {
+        error!("Failed to get logical viewport size");
+        return;
+    };
+    let location = PointerLocation {
+        location: Some(Location {
+            position: position / 2.,
+            target: target
+                .normalize(Some(*window))
+                .expect("Current implementation can't be None if input is Some"),
+        }),
+    };
+
+    commands.spawn((
+        Name::new("PlayerPointer"),
+        PlayerCursor,
+        PointerId::Custom(bevy::asset::uuid::Uuid::new_v4()),
+        location,
+    ));
 }
 
 fn cursor_grab(
