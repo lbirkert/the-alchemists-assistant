@@ -178,9 +178,12 @@ fn update_player_item_preview(
     right_hand: Single<Entity, With<PlayerRightHand>>,
 ) {
     if let Some(item) = inventory.item {
-        commands
-            .entity(*right_hand)
-            .apply_scene(item.scene(Vec3::ZERO));
+        let scene = item.scene(Vec3::ZERO);
+        commands.entity(*right_hand).apply_scene(bsn! {
+            Children [
+                @scene
+            ]
+        });
     } else {
         commands.entity(*right_hand).remove::<WorldAssetRoot>();
     }
