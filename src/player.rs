@@ -37,7 +37,7 @@ fn spawn_player(mut commands: Commands) {
         #Player
         Player
         Inventory {
-            item: Item::Herb { kind: HerbKind::Red }
+            item: Item::Flowers
         }
         Transform {
             translation: Vec3 {
@@ -56,6 +56,7 @@ fn spawn_player(mut commands: Commands) {
         Children [
             ShapeCaster {
                 direction: {Dir3::from_xyz(0.0, 0.0, -1.0).unwrap()},
+                
                 max_hits: 2,
             }
             #PlayerCamera
@@ -70,7 +71,7 @@ fn spawn_player(mut commands: Commands) {
             Children [
                 #RightPlayerHand
                 PlayerRightHand
-                Transform::from_xyz(0.175, -0.4, -1.).with_scale(Vec3::splat(1.0))
+                Transform::from_xyz(0.175, -0.25, -1.).with_scale(Vec3::splat(1.0))
             ]
         ]
     });
@@ -178,12 +179,13 @@ fn player_look(
 
 fn update_player_item_preview(
     mut commands: Commands,
+    assets_server: Res<AssetServer>,
     inventory: Single<&Inventory, Changed<Inventory>>,
     right_hand: Single<Entity, With<PlayerRightHand>>,
     children: Query<&Children>,
 ) {
     if let Some(item) = inventory.item {
-        let scene = item.scene();
+        let scene = item.scene(&assets_server, Vec3::ZERO);
         commands.entity(*right_hand).apply_scene(bsn! {
             Children [
                 @scene
