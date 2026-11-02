@@ -51,12 +51,14 @@ fn spawn_player(mut commands: Commands) {
         Collider::capsule(0.4, 1.8)
         DebugRender::none()
         LockedAxes::ROTATION_LOCKED
+        CollisionLayers::new(GameLayer::Player, [GameLayer::Default, GameLayer::Pickable, GameLayer::Environment])
         Mass(10.)
         NoAutoMass
         Children [
             #PlayerCamera
             Camera3d
             PlayerEyes
+            CollisionLayers::new(GameLayer::Default, [GameLayer::Pickable, GameLayer::Environment])
             Transform {
                 translation: Vec3 {
                     y: 1.
@@ -66,7 +68,6 @@ fn spawn_player(mut commands: Commands) {
                 #RightPlayerHand
                 PlayerRightHand
                 Transform::from_xyz(0.175, -0.4, -1.).with_scale(Vec3::splat(0.3))
-                // WorldAssetRoot("models/LowPolyAlchemyMarket_v1.0/GLB/barrel.glb#Scene0")
             ]
         ]
     });

@@ -8,7 +8,10 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-#[require(RigidBody::Static)]
+#[require(
+    RigidBody::Static,
+    CollisionLayers::new(GameLayer::Environment, GameLayer::all_bits())
+)]
 pub struct EnvironmentObject;
 
 #[derive(Component, Reflect, Default)]
