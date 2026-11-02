@@ -55,7 +55,8 @@ fn spawn_player(mut commands: Commands) {
         NoAutoMass
         Children [
             ShapeCaster {
-                direction: {Dir3::from_xyz(-1.0, 0.0, 0.0).unwrap()}
+                direction: {Dir3::from_xyz(0.0, 0.0, -1.0).unwrap()},
+                max_hits: 2,
             }
             #PlayerCamera
             Camera3d
@@ -69,7 +70,7 @@ fn spawn_player(mut commands: Commands) {
             Children [
                 #RightPlayerHand
                 PlayerRightHand
-                Transform::from_xyz(0.175, -0.4, -1.).with_scale(Vec3::splat(0.3))
+                Transform::from_xyz(0.175, -0.4, -1.).with_scale(Vec3::splat(1.0))
             ]
         ]
     });
@@ -89,7 +90,7 @@ fn cursor_grab(
 fn toggle_grab_cursor(mut primary_cursor_options: Single<&mut CursorOptions, With<PrimaryWindow>>) {
     match primary_cursor_options.grab_mode {
         CursorGrabMode::None => {
-            primary_cursor_options.grab_mode = CursorGrabMode::Confined;
+            primary_cursor_options.grab_mode = CursorGrabMode::Locked;
             primary_cursor_options.visible = false;
         }
         _ => {
@@ -179,15 +180,22 @@ fn update_player_item_preview(
     mut commands: Commands,
     inventory: Single<&Inventory, Changed<Inventory>>,
     right_hand: Single<Entity, With<PlayerRightHand>>,
+    children: Query<&Children>,
 ) {
     if let Some(item) = inventory.item {
-        let scene = item.scene(Vec3::ZERO);
+        let scene = item.scene();
         commands.entity(*right_hand).apply_scene(bsn! {
             Children [
                 @scene
             ]
         });
     } else {
-        commands.entity(*right_hand).remove::<WorldAssetRoot>();
+        let Ok(children) = children.get(*right_hand) else {
+            return;
+        };
+
+        for child in children {
+            commands.entity(*child).despawn();
+        }
     }
 }

@@ -5,7 +5,9 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(GameRunning, place_item);
 }
 
-#[derive(Component, Reflect, Debug, Clone)]
+const ITEM_SIZE: f32 = 0.3;
+
+#[derive(Component, Default, Reflect, Debug, Clone)]
 #[reflect(Component)]
 pub struct ItemsPlaceable;
 
@@ -38,7 +40,7 @@ impl HerbKind {
 
     fn scene(self) -> impl Scene {
         bsn! {
-            Mesh3d(asset_value(Cuboid::new(0.5, 0.5, 0.5)))
+            Mesh3d(asset_value(Cuboid::new(ITEM_SIZE, ITEM_SIZE, ITEM_SIZE)))
             MeshMaterial3d::<StandardMaterial>(asset_value(Color::BLACK))
         }
     }
@@ -66,25 +68,25 @@ impl Item {
         }
     }
 
-    pub fn scene(self, pos: Vec3) -> impl Scene {
+    pub fn scene(self) -> impl Scene {
         let scene = match self {
             Item::Herb { kind } => kind.scene(),
             _ => todo!(),
         };
 
         bsn! {
-            Transform::from_translation(pos)
             @scene
             self
         }
     }
 
     fn physics_scene(self, pos: Vec3, vel: Vec3) -> impl Scene {
-        let scene = self.scene(pos);
+        let scene = self.scene();
         bsn! {
             RigidBody::Dynamic
             LinearVelocity(vel)
-            Collider::sphere(0.5)
+            Transform::from_translation(pos)
+            Collider::sphere(ITEM_SIZE/2.0)
             @scene
         }
     }
@@ -101,26 +103,28 @@ fn pickup_item(
     mut commands: Commands,
     input: Res<ButtonInput<MouseButton>>,
     mut inventory: Single<&mut Inventory>,
-    hits: Single<&RayHits>,
+    hits_query: Query<&ShapeHits>,
     items: Query<(&Item, &Transform)>,
 ) {
     if !input.just_pressed(MouseButton::Right) {
         return;
     }
 
-    for hit in hits.iter_sorted() {
-        let Ok((item, item_transform)) = items.get(hit.entity) else {
-            continue;
-        };
+    for hits in hits_query {
+        for hit in hits.iter_sorted() {
+            let Ok((item, item_transform)) = items.get(hit.entity) else {
+                continue;
+            };
 
-        let old_item = std::mem::replace(&mut inventory.item, Some(item.clone()));
-        if let Some(old_item) = old_item {
-            let item_scene = old_item.physics_scene(item_transform.translation, Vec3::ZERO);
-            commands.spawn_scene(item_scene);
+            let old_item = std::mem::replace(&mut inventory.item, Some(item.clone()));
+            if let Some(old_item) = old_item {
+                let item_scene = old_item.physics_scene(item_transform.translation, Vec3::ZERO);
+                commands.spawn_scene(item_scene);
+            }
+
+            // destroy old item
+            commands.entity(hit.entity).despawn();
         }
-
-        // destroy old item
-        commands.entity(hit.entity).despawn();
     }
 }
 
@@ -128,25 +132,28 @@ fn place_item(
     mut commands: Commands,
     input: Res<ButtonInput<MouseButton>>,
     mut inventory: Single<&mut Inventory>,
-    hits: Single<&RayHits>,
+    hits_query: Query<&ShapeHits>,
     locations: Query<&Transform, With<ItemsPlaceable>>,
 ) {
     if !input.just_pressed(MouseButton::Right) {
         return;
     }
 
-    let Some(item) = inventory.item.take() else {
-        return;
-    };
+    for hits in hits_query {
+        for hit in hits.iter_sorted() {
+            if locations.get(hit.entity).is_err() {
+                continue;
+            }
 
-    for hit in hits.iter_sorted() {
-        let Ok(transform) = locations.get(hit.entity) else {
-            continue;
-        };
+            let Some(item) = inventory.item.take() else {
+                return;
+            };
 
-        let item_scene = item.physics_scene(transform.translation, Vec3::ZERO);
-        commands.spawn_scene(item_scene);
+            let item_scene =
+                item.physics_scene(hit.point1 + hit.normal1 * ITEM_SIZE / 2.0, Vec3::ZERO);
+            commands.spawn_scene(item_scene);
 
-        return;
+            return;
+        }
     }
 }
