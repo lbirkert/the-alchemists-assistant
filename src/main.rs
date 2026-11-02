@@ -1,6 +1,7 @@
 use crate::prelude::*;
 
 mod debug;
+mod inventory;
 mod player;
 mod prelude;
 mod scene;
@@ -32,6 +33,7 @@ pub fn main() -> AppExit {
         debug::plugin,
         scene::plugin,
         player::plugin,
+        inventory::plugin,
     ));
 
     app.run()

@@ -3,7 +3,7 @@ use bevy::{
     window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
 
-use crate::{prelude::*, settings::MovementSettings};
+use crate::{inventory::Inventory, prelude::*, settings::MovementSettings};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(ON_GAME_ENTER, (spawn_player, initial_grab_cursor));
@@ -31,6 +31,8 @@ fn spawn_player(mut commands: Commands) {
     commands.spawn_scene(bsn! {
         #Player
         Player
+        Inventory
+        ShapeCaster
         Transform {
             translation: Vec3 {
                 x: 2.,
