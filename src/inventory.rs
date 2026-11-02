@@ -2,7 +2,12 @@ use crate::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(GameRunning, pickup_item);
+    app.add_systems(GameRunning, place_item);
 }
+
+#[derive(Component, Reflect, Debug, Clone)]
+#[reflect(Component)]
+pub struct ItemsPlaceable;
 
 #[derive(Reflect, Debug, Clone, Copy)]
 // TODO: needs better names?
@@ -110,5 +115,33 @@ fn pickup_item(
 
         // destroy old item
         commands.entity(hit.entity).despawn();
+    }
+}
+
+fn place_item(
+    mut commands: Commands,
+    input: Res<ButtonInput<MouseButton>>,
+    mut query: Query<(&mut Inventory, &RayHits)>,
+    locations: Query<&Transform, With<ItemsPlaceable>>,
+) {
+    let (mut inventory, hits) = query.single_mut().unwrap();
+
+    if !input.just_pressed(MouseButton::Right) {
+        return;
+    }
+
+    let Some(item) = inventory.item.take() else {
+        return;
+    };
+
+    for hit in hits.iter_sorted() {
+        let Ok(transform) = locations.get(hit.entity) else {
+            continue;
+        };
+
+        let item_scene = item.scene(transform.translation, Vec3::ZERO);
+        commands.spawn_scene(item_scene);
+
+        return;
     }
 }
