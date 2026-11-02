@@ -11,6 +11,7 @@ pub(super) fn plugin(app: &mut App) {
 #[require(
     RigidBody::Static,
     Pickable,
+    ItemsPlaceable,
     CollisionLayers::new(GameLayer::Environment, GameLayer::all_bits())
 )]
 pub struct EnvironmentObject;
