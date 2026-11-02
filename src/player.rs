@@ -114,9 +114,8 @@ fn player_move(
         }
     }
 
-    let rotation =
-        Quat::from_rotation_arc(Vec3::NEG_Z, camera_transform.forward().as_vec3().with_y(0.));
-    direction = rotation * direction.normalize_or_zero();
+    let (yaw, _pitch, _roll) = camera_transform.rotation.to_euler(EulerRot::YXZ);
+    direction = Quat::from_rotation_y(yaw) * direction.normalize_or_zero();
 
     let v = direction * settings.speed;
     player_velocity.0.x = v.x;
