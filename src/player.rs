@@ -33,6 +33,7 @@ fn spawn_player(mut commands: Commands) {
         Player
         Transform {
             translation: Vec3 {
+                x: 2.,
                 y: 1.
             }
         }

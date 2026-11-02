@@ -19,6 +19,17 @@ pub struct EnvironmentObject;
 )]
 struct ColliderFromMesh;
 
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+#[require(
+    EnvironmentObject,
+    PointLight {
+        intensity: 600000.0,
+        ..Default::default()
+    },
+)]
+struct GameLight;
+
 fn spawn_scene(mut commands: Commands) {
     commands.spawn_scene(bsn! {
         #GameScene
