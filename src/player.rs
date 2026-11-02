@@ -39,7 +39,6 @@ fn spawn_player(mut commands: Commands) {
         Inventory {
             item: Item::Herb { kind: HerbKind::Red }
         }
-        ShapeCaster
         Transform {
             translation: Vec3 {
                 x: 2.,
@@ -55,6 +54,9 @@ fn spawn_player(mut commands: Commands) {
         Mass(10.)
         NoAutoMass
         Children [
+            ShapeCaster {
+                direction: {Dir3::from_xyz(-1.0, 0.0, 0.0).unwrap()}
+            }
             #PlayerCamera
             Camera3d
             PlayerEyes

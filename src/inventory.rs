@@ -84,6 +84,7 @@ impl Item {
         bsn! {
             RigidBody::Dynamic
             LinearVelocity(vel)
+            Collider::sphere(0.5)
             @scene
         }
     }
@@ -99,11 +100,10 @@ pub struct Inventory {
 fn pickup_item(
     mut commands: Commands,
     input: Res<ButtonInput<MouseButton>>,
-    mut query: Single<(&mut Inventory, &RayHits)>,
+    mut inventory: Single<&mut Inventory>,
+    hits: Single<&RayHits>,
     items: Query<(&Item, &Transform)>,
 ) {
-    let (ref mut inventory, hits) = *query;
-
     if !input.just_pressed(MouseButton::Right) {
         return;
     }
@@ -127,11 +127,10 @@ fn pickup_item(
 fn place_item(
     mut commands: Commands,
     input: Res<ButtonInput<MouseButton>>,
-    mut query: Single<(&mut Inventory, &RayHits)>,
+    mut inventory: Single<&mut Inventory>,
+    hits: Single<&RayHits>,
     locations: Query<&Transform, With<ItemsPlaceable>>,
 ) {
-    let (ref mut inventory, hits) = *query;
-
     if !input.just_pressed(MouseButton::Right) {
         return;
     }
