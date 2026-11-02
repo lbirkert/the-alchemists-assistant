@@ -17,6 +17,7 @@ pub(super) fn plugin(app: &mut App) {
         (
             cursor_grab,
             add_pointer,
+            update_pointer_pos,
             update_player_item_preview,
             player_look.before(player_move),
             player_move.in_set(PhysicsSystems::First),
@@ -73,6 +74,7 @@ fn spawn_player(mut commands: Commands) {
             Children [
                 #RightPlayerHand
                 PlayerRightHand
+                Visibility::Inherited
                 Transform::from_xyz(0.175, -0.4, -1.).with_scale(Vec3::splat(0.3))
             ]
             --
@@ -93,13 +95,13 @@ fn add_pointer(
     window: Single<Entity, With<PrimaryWindow>>,
 ) {
     let (camera, target) = *camera;
-    let Some(position) = camera.logical_viewport_size() else {
+    let Some(size) = camera.logical_viewport_size() else {
         error!("Failed to get logical viewport size");
         return;
     };
     let location = PointerLocation {
         location: Some(Location {
-            position: position / 2.,
+            position: size / 2.,
             target: target
                 .normalize(Some(*window))
                 .expect("Current implementation can't be None if input is Some"),
@@ -112,6 +114,19 @@ fn add_pointer(
         PointerId::Custom(bevy::asset::uuid::Uuid::new_v4()),
         location,
     ));
+}
+
+fn update_pointer_pos(
+    camera: Single<&Camera, Changed<Camera>>,
+    mut cursor: Single<&mut PointerLocation, With<PlayerCursor>>,
+) {
+    let Some(size) = camera.logical_viewport_size() else {
+        error!("Failed to get logical viewport size");
+        return;
+    };
+    if let Some(location) = &mut cursor.location {
+        location.position = size / 2.;
+    }
 }
 
 fn cursor_grab(
