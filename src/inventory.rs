@@ -67,18 +67,25 @@ impl Item {
         }
     }
 
-    fn scene(self, pos: Vec3, vel: Vec3) -> impl Scene {
+    pub fn scene(self, pos: Vec3) -> impl Scene {
         let scene = match self {
             Item::Herb { kind } => kind.scene(),
             _ => todo!(),
         };
 
         bsn! {
-            RigidBody::Dynamic
-            LinearVelocity(vel)
             Transform::from_translation(pos)
             @scene
             self
+        }
+    }
+
+    fn physics_scene(self, pos: Vec3, vel: Vec3) -> impl Scene {
+        let scene = self.scene(pos);
+        bsn! {
+            RigidBody::Dynamic
+            LinearVelocity(vel)
+            @scene
         }
     }
 }
@@ -93,10 +100,10 @@ pub struct Inventory {
 fn pickup_item(
     mut commands: Commands,
     input: Res<ButtonInput<MouseButton>>,
-    mut query: Query<(&mut Inventory, &RayHits)>,
+    mut query: Single<(&mut Inventory, &RayHits)>,
     items: Query<(&Item, &Transform)>,
 ) {
-    let (mut inventory, hits) = query.single_mut().unwrap();
+    let (ref mut inventory, hits) = *query;
 
     if !input.just_pressed(MouseButton::Right) {
         return;
@@ -109,7 +116,7 @@ fn pickup_item(
 
         let old_item = std::mem::replace(&mut inventory.item, Some(item.clone()));
         if let Some(old_item) = old_item {
-            let item_scene = old_item.scene(item_transform.translation, Vec3::ZERO);
+            let item_scene = old_item.physics_scene(item_transform.translation, Vec3::ZERO);
             commands.spawn_scene(item_scene);
         }
 
@@ -121,10 +128,10 @@ fn pickup_item(
 fn place_item(
     mut commands: Commands,
     input: Res<ButtonInput<MouseButton>>,
-    mut query: Query<(&mut Inventory, &RayHits)>,
+    mut query: Single<(&mut Inventory, &RayHits)>,
     locations: Query<&Transform, With<ItemsPlaceable>>,
 ) {
-    let (mut inventory, hits) = query.single_mut().unwrap();
+    let (ref mut inventory, hits) = *query;
 
     if !input.just_pressed(MouseButton::Right) {
         return;
@@ -139,7 +146,7 @@ fn place_item(
             continue;
         };
 
-        let item_scene = item.scene(transform.translation, Vec3::ZERO);
+        let item_scene = item.physics_scene(transform.translation, Vec3::ZERO);
         commands.spawn_scene(item_scene);
 
         return;

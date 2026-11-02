@@ -12,6 +12,7 @@ pub(super) fn plugin(app: &mut App) {
         GameRunning,
         (
             cursor_grab,
+            update_player_item_preview,
             player_look.before(player_move),
             player_move.in_set(PhysicsSystems::First),
         ),
@@ -27,11 +28,17 @@ struct Player;
 /// Marker component for the camera
 struct PlayerEyes;
 
+#[derive(Component, Reflect, Default, Clone, Copy)]
+#[reflect(Component)]
+struct PlayerRightHand;
+
 fn spawn_player(mut commands: Commands) {
     commands.spawn_scene(bsn! {
         #Player
         Player
-        Inventory
+        Inventory {
+            item: Item::Herb { kind: HerbKind::Red }
+        }
         ShapeCaster
         Transform {
             translation: Vec3 {
@@ -55,6 +62,12 @@ fn spawn_player(mut commands: Commands) {
                     y: 1.
                 }
             }
+            Children [
+                #RightPlayerHand
+                PlayerRightHand
+                Transform::from_xyz(0.175, -0.4, -1.).with_scale(Vec3::splat(0.3))
+                // WorldAssetRoot("models/LowPolyAlchemyMarket_v1.0/GLB/barrel.glb#Scene0")
+            ]
         ]
     });
 }
@@ -156,5 +169,19 @@ fn player_look(
         }
     } else {
         warn!("Primary window not found for `player_look`!");
+    }
+}
+
+fn update_player_item_preview(
+    mut commands: Commands,
+    inventory: Single<&Inventory, Changed<Inventory>>,
+    right_hand: Single<Entity, With<PlayerRightHand>>,
+) {
+    if let Some(item) = inventory.item {
+        commands
+            .entity(*right_hand)
+            .apply_scene(item.scene(Vec3::ZERO));
+    } else {
+        commands.entity(*right_hand).remove::<WorldAssetRoot>();
     }
 }
