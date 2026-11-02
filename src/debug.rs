@@ -1,4 +1,3 @@
-use bevy::input::common_conditions::{input_just_pressed, input_toggle_active};
 use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 
 use crate::prelude::*;
@@ -16,7 +15,7 @@ pub(super) fn plugin(app: &mut App) {
     // Physics debug
     app.add_plugins(PhysicsDebugPlugin);
     app.add_systems(
-        GameRunning,
+        GameUpdate,
         toggle_physics_gizmo.run_if(input_just_pressed(KeyCode::F3)),
     );
     app.insert_gizmo_config(
@@ -29,7 +28,7 @@ pub(super) fn plugin(app: &mut App) {
 
     // Pointer debug
     app.add_systems(
-        GameRunning,
+        GameUpdate,
         draw_mesh_intersections.run_if(input_toggle_active(DEBUG_ENABLED_DEFAULT, KeyCode::F4)),
     );
 }

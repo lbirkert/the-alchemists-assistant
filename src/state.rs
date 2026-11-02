@@ -1,27 +1,28 @@
-use bevy::{ecs::schedule::ScheduleLabel, prelude::*};
+use crate::prelude::*;
+
+use bevy::ecs::schedule::ScheduleLabel;
 
 pub fn plugin(app: &mut App) {
     app.init_state::<GameState>();
     app.add_sub_state::<GamePaused>();
 
-    app.add_schedule(Schedule::new(GameRunning));
+    app.add_schedule(Schedule::new(TitleScreenUpdate));
+    app.add_schedule(Schedule::new(GameUpdate));
 
-    app.add_systems(
-        Update,
-        (|world: &mut World| world.run_schedule(GameRunning)).run_if(in_state(GamePaused(false))),
-    );
+    app.add_systems(Update, run_custom_schedules);
+
+    app.add_systems(ON_GAME_EXIT, despawn_game_objects);
 }
 
-#[derive(States, Default, Debug, Hash, Eq, PartialEq, Clone)]
+#[derive(States, Default, Debug, Hash, Eq, PartialEq, Clone, Copy)]
 pub enum GameState {
-    // TODO! Title should be default
-    Title,
     #[default]
+    Title,
     Game,
     End,
 }
 
-#[derive(SubStates, Default, Debug, Hash, Eq, PartialEq, Clone)]
+#[derive(SubStates, Default, Debug, Hash, Eq, PartialEq, Clone, Copy)]
 #[source(GameState = GameState::Game)]
 pub struct GamePaused(pub bool);
 
@@ -31,10 +32,35 @@ pub const ON_GAME_EXIT: OnExit<GameState> = OnExit(GameState::Game);
 #[derive(ScheduleLabel, Hash, Clone, Copy, Debug, PartialEq, Eq)]
 /// Convenience, allows using
 /// ```ignore
-/// app.add_systems(GameRunning, systems);
+/// app.add_systems(GameUpdate, systems);
 /// ```
 /// instead of
 /// ```ignore
 /// app.add_systems(Update, systems.run_if(in_state(GamePaused(false)));
 /// ```
-pub struct GameRunning;
+pub struct GameUpdate;
+
+#[derive(ScheduleLabel, Hash, Clone, Copy, Debug, PartialEq, Eq)]
+pub struct TitleScreenUpdate;
+
+fn run_custom_schedules(world: &mut World) {
+    let Some(game_state) = world.get_resource::<State<GameState>>() else {
+        return;
+    };
+    let is_paused = world
+        .get_resource::<State<GamePaused>>()
+        .map_or_default(|s| s.get().0);
+    let game_state = *game_state.get();
+
+    match game_state {
+        GameState::Title => world.run_schedule(TitleScreenUpdate),
+        GameState::Game if !is_paused => world.run_schedule(GameUpdate),
+        _ => {}
+    }
+}
+
+fn despawn_game_objects(mut commands: Commands, query: Query<Entity, With<EnvironmentObject>>) {
+    for entity in query {
+        commands.entity(entity).despawn();
+    }
+}

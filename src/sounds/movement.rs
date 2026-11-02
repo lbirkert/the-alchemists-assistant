@@ -6,7 +6,7 @@ use rand::seq::IndexedRandom;
 use crate::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(GameRunning, play_movement_sound);
+    app.add_systems(GameUpdate, play_movement_sound);
 }
 
 #[derive(Component, Reflect, Clone)]

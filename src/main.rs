@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+mod camera;
 mod debug;
 mod game_layer;
 mod inventory;
@@ -9,6 +10,7 @@ mod scene;
 mod settings;
 mod sounds;
 mod state;
+mod ui;
 mod utils;
 
 pub fn main() -> AppExit {
@@ -35,8 +37,10 @@ pub fn main() -> AppExit {
     // Our plugins
     app.add_plugins((
         state::plugin,
+        camera::plugin,
         settings::plugin,
         utils::plugin,
+        ui::plugin,
         debug::plugin,
         scene::plugin,
         sounds::plugin,

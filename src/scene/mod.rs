@@ -39,5 +39,6 @@ fn spawn_scene(mut commands: Commands) {
     commands.spawn_scene(bsn! {
         #GameScene
         WorldAssetRoot("TheAlchemistsAssistant.glb#Scene0")
+        DespawnOnExit<GameState>(GameState::Game)
     });
 }

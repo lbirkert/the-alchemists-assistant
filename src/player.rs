@@ -10,12 +10,12 @@ use crate::{
 };
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(ON_GAME_ENTER, (spawn_player, initial_grab_cursor));
+    app.add_systems(ON_GAME_ENTER, spawn_player);
+    app.add_systems(ON_GAME_EXIT, despawn_player);
 
     app.add_systems(
-        GameRunning,
+        GameUpdate,
         (
-            cursor_grab,
             add_pointer,
             update_pointer_pos,
             update_player_item_preview,
@@ -38,8 +38,8 @@ struct PlayerEyes;
 #[reflect(Component)]
 struct PlayerRightHand;
 
-fn spawn_player(mut commands: Commands) {
-    commands.spawn_scene(bsn! {
+fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) {
+    let player_entity = commands.spawn_scene(bsn! {
         #Player
         Player
         Inventory {
@@ -60,28 +60,28 @@ fn spawn_player(mut commands: Commands) {
         Mass(10.)
         NoAutoMass
         Children [
-            #PlayerCamera
-            Camera3d
-            MeshPickingCamera
-            PlayerEyes
-            CollisionLayers::new(GameLayer::Default, [GameLayer::Pickable, GameLayer::Environment])
-            Transform {
-                translation: Vec3 {
-                    y: 1.
-                }
-            }
-            Children [
-                #RightPlayerHand
-                PlayerRightHand
-                Visibility::Inherited
-                Transform::from_xyz(0.175, -0.4, -1.)
-            ]
-            --
             #PlayerEars
             // Space between the ears
             SpatialListener::new(0.5)
+            DespawnOnExit::<GameState>(GameState::Game)
+        ]
+    }).id();
+
+    commands.entity(*camera).apply_scene(bsn! {
+        ChildOf(player_entity)
+        PlayerEyes
+        Children [
+            #RightPlayerHand
+            PlayerRightHand
+            Visibility::Inherited
+            Transform::from_xyz(0.175, -0.4, -1.)
+            DespawnOnExit::<GameState>(GameState::Game)
         ]
     });
+}
+
+fn despawn_player(mut commands: Commands, player: Single<Entity, With<Player>>) {
+    commands.entity(*player).detach_all_children().despawn();
 }
 
 #[derive(Component, Reflect, Default, Clone, Copy)]
@@ -126,35 +126,6 @@ fn update_pointer_pos(
     if let Some(location) = &mut cursor.location {
         location.position = size / 2.;
     }
-}
-
-fn cursor_grab(
-    keys: Res<ButtonInput<KeyCode>>,
-    key_bindings: Res<KeyBindings>,
-    primary_cursor_options: Single<&mut CursorOptions, With<PrimaryWindow>>,
-) {
-    if keys.just_pressed(key_bindings.toggle_grab_cursor) {
-        toggle_grab_cursor(primary_cursor_options);
-    }
-}
-
-/// Grabs/ungrabs mouse cursor
-fn toggle_grab_cursor(mut primary_cursor_options: Single<&mut CursorOptions, With<PrimaryWindow>>) {
-    match primary_cursor_options.grab_mode {
-        CursorGrabMode::None => {
-            primary_cursor_options.grab_mode = CursorGrabMode::Locked;
-            primary_cursor_options.visible = false;
-        }
-        _ => {
-            primary_cursor_options.grab_mode = CursorGrabMode::None;
-            primary_cursor_options.visible = true;
-        }
-    }
-}
-
-/// Grabs the cursor when game first starts
-fn initial_grab_cursor(primary_cursor_options: Single<&mut CursorOptions, With<PrimaryWindow>>) {
-    toggle_grab_cursor(primary_cursor_options);
 }
 
 /// Handles keyboard input and movement

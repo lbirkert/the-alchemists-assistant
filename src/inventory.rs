@@ -3,8 +3,8 @@ use bevy::picking::backend::HitData;
 use crate::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(GameRunning, pickup_item);
-    app.add_systems(GameRunning, place_item);
+    app.add_systems(GameUpdate, pickup_item);
+    app.add_systems(GameUpdate, place_item);
 }
 
 const ITEM_SIZE: f32 = 0.3;

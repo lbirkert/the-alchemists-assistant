@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(GameRunning, remove_meshes);
+    app.add_systems(GameUpdate, remove_meshes);
 }
 
 #[derive(Component, Reflect)]
