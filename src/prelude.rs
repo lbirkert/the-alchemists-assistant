@@ -1,3 +1,4 @@
+pub use crate::game_layer::GameLayer;
 pub use crate::inventory::{HerbKind, Inventory, Item};
 pub use crate::scene::EnvironmentObject;
 pub use crate::settings::KeyBindings;
