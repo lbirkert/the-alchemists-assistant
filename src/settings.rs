@@ -32,7 +32,7 @@ pub struct KeyBindings {
     pub move_right: KeyCode,
     pub move_ascend: KeyCode,
     pub move_descend: KeyCode,
-    pub toggle_grab_cursor: KeyCode,
+    pub pause_game: KeyCode,
 }
 
 impl Default for KeyBindings {
@@ -44,7 +44,7 @@ impl Default for KeyBindings {
             move_right: KeyCode::KeyD,
             move_ascend: KeyCode::Space,
             move_descend: KeyCode::ShiftLeft,
-            toggle_grab_cursor: KeyCode::Escape,
+            pause_game: KeyCode::Escape,
         }
     }
 }

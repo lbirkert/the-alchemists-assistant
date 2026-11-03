@@ -5,9 +5,8 @@ use crate::prelude::*;
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Startup, setup);
 
-    app.add_systems(ON_GAME_ENTER, grab_cursor);
-
-    app.add_systems(GameUpdate, cursor_grab);
+    app.add_systems(OnEnter(GamePaused(false)), grab_cursor);
+    app.add_systems(OnExit(GamePaused(false)), ungrab_cursor);
 }
 
 fn setup(mut commands: Commands) {
@@ -21,28 +20,6 @@ fn setup(mut commands: Commands) {
             }
         }
     });
-}
-
-fn cursor_grab(
-    keys: Res<ButtonInput<KeyCode>>,
-    key_bindings: Res<KeyBindings>,
-    primary_cursor_options: Single<&mut CursorOptions, With<PrimaryWindow>>,
-) {
-    if keys.just_pressed(key_bindings.toggle_grab_cursor) {
-        toggle_grab_cursor(primary_cursor_options);
-    }
-}
-
-/// Grabs/ungrabs mouse cursor
-fn toggle_grab_cursor(primary_cursor_options: Single<&mut CursorOptions, With<PrimaryWindow>>) {
-    match primary_cursor_options.grab_mode {
-        CursorGrabMode::None => {
-            grab_cursor(primary_cursor_options);
-        }
-        _ => {
-            ungrab_cursor(primary_cursor_options);
-        }
-    }
 }
 
 fn grab_cursor(mut primary_cursor_options: Single<&mut CursorOptions, With<PrimaryWindow>>) {
