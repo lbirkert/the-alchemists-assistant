@@ -34,6 +34,8 @@ pub fn main() -> AppExit {
 
     app.add_plugins(bevy_skein::SkeinPlugin::default());
 
+    app.add_plugins(bevy_easings::EasingsPlugin::default());
+
     // Our plugins
     app.add_plugins((
         state::plugin,

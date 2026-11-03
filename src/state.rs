@@ -7,9 +7,12 @@ pub fn plugin(app: &mut App) {
     app.add_sub_state::<GamePaused>();
 
     app.add_schedule(Schedule::new(TitleScreenUpdate));
+    app.add_schedule(Schedule::new(TitleScreenPostUpdate));
     app.add_schedule(Schedule::new(GameUpdate));
+    app.add_schedule(Schedule::new(GamePostUpdate));
 
-    app.add_systems(Update, run_custom_schedules);
+    app.add_systems(Update, run_update_schedules);
+    app.add_systems(PostUpdate, run_post_update_schedules);
 
     app.add_systems(ON_GAME_EXIT, despawn_game_objects);
 }
@@ -41,9 +44,15 @@ pub const ON_GAME_EXIT: OnExit<GameState> = OnExit(GameState::Game);
 pub struct GameUpdate;
 
 #[derive(ScheduleLabel, Hash, Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GamePostUpdate;
+
+#[derive(ScheduleLabel, Hash, Clone, Copy, Debug, PartialEq, Eq)]
 pub struct TitleScreenUpdate;
 
-fn run_custom_schedules(world: &mut World) {
+#[derive(ScheduleLabel, Hash, Clone, Copy, Debug, PartialEq, Eq)]
+pub struct TitleScreenPostUpdate;
+
+fn run_update_schedules(world: &mut World) {
     let Some(game_state) = world.get_resource::<State<GameState>>() else {
         return;
     };
@@ -55,6 +64,22 @@ fn run_custom_schedules(world: &mut World) {
     match game_state {
         GameState::Title => world.run_schedule(TitleScreenUpdate),
         GameState::Game if !is_paused => world.run_schedule(GameUpdate),
+        _ => {}
+    }
+}
+
+fn run_post_update_schedules(world: &mut World) {
+    let Some(game_state) = world.get_resource::<State<GameState>>() else {
+        return;
+    };
+    let is_paused = world
+        .get_resource::<State<GamePaused>>()
+        .map_or_default(|s| s.get().0);
+    let game_state = *game_state.get();
+
+    match game_state {
+        GameState::Title => world.run_schedule(TitleScreenPostUpdate),
+        GameState::Game if !is_paused => world.run_schedule(GamePostUpdate),
         _ => {}
     }
 }
