@@ -19,6 +19,7 @@ pub(super) fn plugin(app: &mut App) {
             add_pointer,
             update_pointer_pos,
             update_player_item_preview,
+            play_player_animation,
             fix_fall_to_void,
             player_look.before(player_move),
             player_move.in_set(PhysicsSystems::First),
@@ -41,6 +42,33 @@ struct PlayerEyes;
 #[reflect(Component)]
 struct PlayerRightHand;
 
+#[derive(Component, Reflect, Default, Clone, Copy)]
+#[reflect(Component)]
+#[component(on_add)]
+struct PlayerPestleSocket;
+
+#[derive(Component, Reflect, Default, Clone, Copy)]
+#[reflect(Component)]
+#[component(on_add)]
+struct PlayerPestle;
+
+impl PlayerPestleSocket {
+    fn on_add(mut world: DeferredWorld, ctx: HookContext) {
+        world.commands().entity(ctx.entity).apply_scene(bsn! {
+            WorldAssetRoot("Mortar.glb#Scene1")
+        });
+    }
+}
+
+impl PlayerPestle {
+    fn on_add(mut world: DeferredWorld, ctx: HookContext) {
+        world
+            .commands()
+            .entity(ctx.entity)
+            .insert(Transform::default());
+    }
+}
+
 fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) {
     let player_entity = commands.spawn_scene(bsn! {
         #Player
@@ -59,6 +87,7 @@ fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) 
         CollisionLayers::new(GameLayer::Player, [GameLayer::Default, GameLayer::Pickable, GameLayer::Environment])
         Mass(10.)
         NoAutoMass
+        WorldAssetRoot("Player.glb#Scene0")
         Children [
             #PlayerEars
             // Space between the ears
@@ -82,6 +111,23 @@ fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) 
 
 fn despawn_player(mut commands: Commands, player: Single<Entity, With<Player>>) {
     commands.entity(*player).detach_all_children().despawn();
+}
+
+fn play_player_animation(
+    mut commands: Commands,
+    mut graphs: ResMut<Assets<AnimationGraph>>,
+    assets_server: Res<AssetServer>,
+    animation_players: Query<(Entity, &mut AnimationPlayer), Added<AnimationPlayer>>,
+) {
+    for (entity, mut animation_player) in animation_players {
+        let (graph, pestle) =
+            AnimationGraph::from_clip(assets_server.load("Player.glb#Animation0"));
+        let graph_handle = graphs.add(graph);
+        commands
+            .entity(entity)
+            .insert(AnimationGraphHandle(graph_handle));
+        animation_player.play(pestle).repeat();
+    }
 }
 
 fn fix_fall_to_void(mut transform: Single<&mut Transform, With<Player>>) {
