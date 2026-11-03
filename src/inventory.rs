@@ -41,8 +41,7 @@ impl Item {
             _ => todo!(),
         };
 
-        let asset =
-            asset_server.load(GltfAssetLabel::Scene(0).from_asset(format!("models/{}", asset)));
+        let asset = asset_server.load(GltfAssetLabel::Scene(0).from_asset(asset));
 
         bsn! {
             self
