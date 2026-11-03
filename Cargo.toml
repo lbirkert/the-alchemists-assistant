@@ -12,6 +12,7 @@ bevy = { version = "0.20", default-features = false, features = [
   "bevy_feathers",
   "serialize",
   "bevy_gltf",
+  "jpeg",
 ] }
 bevy-inspector-egui = "0.38"
 bevy_easings = "0.20"
@@ -34,6 +35,7 @@ tracing = { version = "0.1", features = [
   "release_max_level_warn",
 ] }
 getrandom = { version = "0.4", features = ["wasm_js"] }
+bevy_flora = "0.47.0"
 
 [features]
 default = ["dev_native"]
