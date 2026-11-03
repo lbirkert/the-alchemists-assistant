@@ -74,14 +74,14 @@ fn pickup_item(
     input: Res<ButtonInput<MouseButton>>,
     mut inventory: Single<&mut Inventory>,
     pointer: Single<&PointerInteraction, With<PlayerCursor>>,
-    items: Query<(&Item, &Transform)>,
+    item_query: Query<(Option<&ChildOf>, Option<&Item>, &Transform)>,
 ) {
     if !input.just_pressed(MouseButton::Right) {
         return;
     }
 
     if let Some((entity, _hit)) = pointer.get_nearest_hit()
-        && let Ok((item, item_transform)) = items.get(*entity)
+        && let Some((item, item_transform)) = find_item(*entity, &item_query)
     {
         let old_item = inventory.item.replace(*item);
         if let Some(old_item) = old_item {
@@ -93,6 +93,18 @@ fn pickup_item(
         // destroy old item
         commands.entity(*entity).despawn();
     }
+}
+
+fn find_item<'a>(
+    entity: Entity,
+    query: &'a Query<(Option<&ChildOf>, Option<&Item>, &Transform)>,
+) -> Option<(&'a Item, &'a Transform)> {
+    let (parent, item, transform) = query.get(entity).ok()?;
+    if let Some(item) = item {
+        return Some((item, transform));
+    }
+    let parent = parent?;
+    find_item(parent.0, query)
 }
 
 fn place_item(

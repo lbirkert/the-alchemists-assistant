@@ -19,11 +19,14 @@ pub(super) fn plugin(app: &mut App) {
             add_pointer,
             update_pointer_pos,
             update_player_item_preview,
+            fix_fall_to_void,
             player_look.before(player_move),
             player_move.in_set(PhysicsSystems::First),
         ),
     );
 }
+
+const PLAYER_SPAWN_POS: Vec3 = Vec3::new(2., 2., 0.);
 
 #[derive(Component, Reflect, Default, Clone, Copy)]
 #[reflect(Component)]
@@ -46,10 +49,7 @@ fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) 
             item: Item::Garlic
         }
         Transform {
-            translation: Vec3 {
-                x: 2.,
-                y: 2.
-            }
+            translation: PLAYER_SPAWN_POS
         }
         Visibility::Inherited
         RigidBody::Dynamic
@@ -82,6 +82,12 @@ fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) 
 
 fn despawn_player(mut commands: Commands, player: Single<Entity, With<Player>>) {
     commands.entity(*player).detach_all_children().despawn();
+}
+
+fn fix_fall_to_void(mut transform: Single<&mut Transform, With<Player>>) {
+    if transform.translation.y < -100. {
+        transform.translation = PLAYER_SPAWN_POS;
+    }
 }
 
 #[derive(Component, Reflect, Default, Clone, Copy)]
