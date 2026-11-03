@@ -13,83 +13,50 @@ const ITEM_SIZE: f32 = 0.3;
 #[reflect(Component)]
 pub struct ItemsPlaceable;
 
-#[derive(Reflect, Debug, Clone, Copy)]
-// TODO: needs better names?
-pub enum HerbKind {
-    Red,
-    Orange,
-    Yellow,
-    Blue,
-    Purple,
-    Pink,
-    White,
-    Green,
-}
-
-impl HerbKind {
-    pub fn display_name(&self) -> &'static str {
-        match self {
-            HerbKind::Red => "Red Herb",
-            HerbKind::Orange => "Orange Herb",
-            HerbKind::Yellow => "Yellow Herb",
-            HerbKind::Blue => "Blue Herb",
-            HerbKind::Purple => "Purple Herb",
-            HerbKind::Pink => "Pink Herb",
-            HerbKind::White => "White Herb",
-            HerbKind::Green => "Green Herb",
-        }
-    }
-
-    fn scene(self) -> impl Scene {
-        bsn! {
-            Mesh3d(asset_value(Cuboid::new(ITEM_SIZE, ITEM_SIZE, ITEM_SIZE)))
-            MeshMaterial3d::<StandardMaterial>(asset_value(Color::BLACK))
-        }
-    }
-}
-
 // we might want to use https://github.com/FraserLee/bevy_sprite3d/blob/main/examples/sprite.rs
 // for rendering the items. -> Ask faervan
 
 #[derive(Component, Reflect, Debug, Clone, Copy)]
 #[reflect(Component)]
 pub enum Item {
-    FishSalmon,
-
-    Herb {
-        kind: HerbKind,
-        // martered: bool, // gemörsert, TODO: brauchen nen shader/textures dafür
-    },
+    Garlic,
+    Crystal,
+    Grass,
+    Flowers,
 }
 
 impl Item {
     pub fn display_name(&self) -> &'static str {
         match self {
-            Item::Herb { kind } => kind.display_name(),
             _ => "Unknown",
         }
     }
 
-    pub fn scene(self) -> impl Scene {
-        let scene = match self {
-            Item::Herb { kind } => kind.scene(),
+    pub fn scene(self, asset_server: &AssetServer, pos: Vec3) -> impl Scene {
+        let asset = match self {
+            Item::Garlic => "Garlic.glb",
+            Item::Grass => "Grass.glb",
+            Item::Flowers => "Flowers.glb",
+            Item::Crystal => "Crystal.glb",
             _ => todo!(),
         };
 
+        let asset =
+            asset_server.load(GltfAssetLabel::Scene(0).from_asset(format!("models/{}", asset)));
+
         bsn! {
-            @scene
             self
+            WorldAssetRoot(asset)
+            Transform::from_translation(pos).with_scale(Vec3::splat(ITEM_SIZE))
         }
     }
 
-    fn physics_scene(self, pos: Vec3, vel: Vec3) -> impl Scene {
-        let scene = self.scene();
+    fn physics_scene(self, asset_server: &AssetServer, pos: Vec3, vel: Vec3) -> impl Scene {
+        let scene = self.scene(asset_server, pos);
         bsn! {
             RigidBody::Dynamic
             LinearVelocity(vel)
-            Transform::from_translation(pos)
-            Collider::sphere(ITEM_SIZE/2.0)
-            Pickable
+            Collider::cuboid(1.0, 1.0, 1.0)
             @scene
         }
     }
@@ -104,6 +71,7 @@ pub struct Inventory {
 
 fn pickup_item(
     mut commands: Commands,
+    assets_server: Res<AssetServer>,
     input: Res<ButtonInput<MouseButton>>,
     mut inventory: Single<&mut Inventory>,
     pointer: Single<&PointerInteraction, With<PlayerCursor>>,
@@ -118,7 +86,8 @@ fn pickup_item(
     {
         let old_item = inventory.item.replace(*item);
         if let Some(old_item) = old_item {
-            let item_scene = old_item.physics_scene(item_transform.translation, Vec3::ZERO);
+            let item_scene =
+                old_item.physics_scene(&assets_server, item_transform.translation, Vec3::ZERO);
             commands.spawn_scene(item_scene);
         }
 
@@ -129,6 +98,7 @@ fn pickup_item(
 
 fn place_item(
     mut commands: Commands,
+    assets_server: Res<AssetServer>,
     input: Res<ButtonInput<MouseButton>>,
     mut inventory: Single<&mut Inventory>,
     pointer: Single<&PointerInteraction, With<PlayerCursor>>,
@@ -155,7 +125,11 @@ fn place_item(
             return;
         };
 
-        let item_scene = item.physics_scene(position + normal * ITEM_SIZE / 2.0, Vec3::ZERO);
+        let item_scene = item.physics_scene(
+            &assets_server,
+            position + normal * ITEM_SIZE / 2.0,
+            Vec3::ZERO,
+        );
         commands.spawn_scene(item_scene);
     }
 }
