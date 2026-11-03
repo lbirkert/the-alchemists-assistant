@@ -18,6 +18,9 @@ bevy-inspector-egui = "0.38"
 bevy_easings = "0.20"
 bevy_enhanced_input = "0.27"
 bevy_skein = "0.7"
+bevy_hanabi = "0.20"
+bevy_flora = "0.47.0"
+
 bitflags = "2"
 clap = { version = "4", features = ["derive"] }
 rand = "0.10"
@@ -35,7 +38,6 @@ tracing = { version = "0.1", features = [
   "release_max_level_warn",
 ] }
 getrandom = { version = "0.4", features = ["wasm_js"] }
-bevy_flora = "0.47.0"
 
 [features]
 default = ["dev_native"]
