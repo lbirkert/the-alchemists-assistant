@@ -1153,6 +1153,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_flora"
+version = "0.47.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0a83dec479241fc877348e6b7e29f44e6accba51619ee87c7a394d6e71b7285f"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "bevy_gilrs"
 version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6409,6 +6418,7 @@ dependencies = [
  "bevy-inspector-egui",
  "bevy_easings",
  "bevy_enhanced_input",
+ "bevy_flora",
  "bevy_skein",
  "bitflags 2.13.2",
  "clap",

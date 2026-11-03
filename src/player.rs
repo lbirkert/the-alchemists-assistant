@@ -48,7 +48,7 @@ fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) 
         Transform {
             translation: Vec3 {
                 x: 2.,
-                y: 1.
+                y: 2.
             }
         }
         Visibility::Inherited
