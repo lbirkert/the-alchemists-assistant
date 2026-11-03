@@ -24,10 +24,7 @@ pub fn main() -> AppExit {
         ..Default::default()
     }));
     app.add_plugins(MeshPickingPlugin);
-    app.insert_resource(MeshPickingSettings {
-        require_markers: true,
-        ..Default::default()
-    });
+    app.insert_resource(MeshPickingSettings::default());
 
     // Ecosystem plugins
     app.add_plugins(PhysicsPlugins::default());
