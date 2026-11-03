@@ -5,6 +5,7 @@ use crate::prelude::*;
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(GameUpdate, pickup_item);
     app.add_systems(GameUpdate, place_item);
+    app.add_systems(GameUpdate, discard_item);
 }
 
 const ITEM_SIZE: f32 = 0.3;
@@ -12,6 +13,10 @@ const ITEM_SIZE: f32 = 0.3;
 #[derive(Component, Default, Reflect, Debug, Clone)]
 #[reflect(Component)]
 pub struct ItemsPlaceable;
+
+#[derive(Component, Default, Reflect, Debug, Clone)]
+#[reflect(Component)]
+pub struct ItemsDiscardable;
 
 // we might want to use https://github.com/FraserLee/bevy_sprite3d/blob/main/examples/sprite.rs
 // for rendering the items. -> Ask faervan
@@ -142,5 +147,32 @@ fn place_item(
             Vec3::ZERO,
         );
         commands.spawn_scene(item_scene);
+    }
+}
+
+fn discard_item(
+    input: Res<ButtonInput<MouseButton>>,
+    mut inventory: Single<&mut Inventory>,
+    pointer: Single<&PointerInteraction, With<PlayerCursor>>,
+    locations: Query<&Transform, With<ItemsDiscardable>>,
+) {
+    if !input.just_pressed(MouseButton::Right) {
+        return;
+    }
+
+    if let Some((
+        entity,
+        HitData {
+            position: Some(position),
+            normal: Some(normal),
+            ..
+        },
+    )) = pointer.get_nearest_hit()
+    {
+        if locations.get(*entity).is_err() {
+            return;
+        }
+
+        inventory.item = None;
     }
 }
