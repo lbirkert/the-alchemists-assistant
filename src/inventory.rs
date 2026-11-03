@@ -80,8 +80,8 @@ fn pickup_item(
         return;
     }
 
-    if let Some((entity, _hit)) = pointer.get_nearest_hit()
-        && let Some((item, item_transform)) = find_item(*entity, &item_query)
+    if let Some((mesh_entity, _hit)) = pointer.get_nearest_hit()
+        && let Some((entity, item, item_transform)) = find_item(*mesh_entity, &item_query)
     {
         let old_item = inventory.item.replace(*item);
         if let Some(old_item) = old_item {
@@ -91,17 +91,17 @@ fn pickup_item(
         }
 
         // destroy old item
-        commands.entity(*entity).despawn();
+        commands.entity(entity).despawn();
     }
 }
 
 fn find_item<'a>(
     entity: Entity,
     query: &'a Query<(Option<&ChildOf>, Option<&Item>, &Transform)>,
-) -> Option<(&'a Item, &'a Transform)> {
+) -> Option<(Entity, &'a Item, &'a Transform)> {
     let (parent, item, transform) = query.get(entity).ok()?;
     if let Some(item) = item {
-        return Some((item, transform));
+        return Some((entity, item, transform));
     }
     let parent = parent?;
     find_item(parent.0, query)
