@@ -4,7 +4,7 @@ pub use crate::game_layer::GameLayer;
 pub use crate::inventory::Inventory;
 pub use crate::item::{Item, ItemsDiscardable, ItemsPlaceable};
 pub use crate::player::PlayerCursor;
-pub use crate::scene::EnvironmentObject;
+pub use crate::scene::{EnvironmentObject, Interactable};
 pub use crate::settings::KeyBindings;
 pub use crate::state::{
     GamePaused, GamePostUpdate, GameState, GameUpdate, MainMenuOpen, ON_GAME_ENTER, ON_GAME_EXIT,

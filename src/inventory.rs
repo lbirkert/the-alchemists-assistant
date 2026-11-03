@@ -49,14 +49,16 @@ fn pickup_item(
     input: Res<ButtonInput<MouseButton>>,
     mut inventory: Single<&mut Inventory>,
     pointer: Single<&PointerInteraction, With<PlayerCursor>>,
-    item_query: Query<(Option<&ChildOf>, Option<&Item>, &Transform)>,
+    query: Query<(Option<&ChildOf>, Has<Item>)>,
+    item_query: Query<(&Item, &Transform)>,
 ) {
     if !input.just_pressed(MouseButton::Right) {
         return;
     }
 
     if let Some((mesh_entity, _hit)) = pointer.get_nearest_hit()
-        && let Some((entity, item, item_transform)) = find_item(*mesh_entity, &item_query)
+        && let Some(entity) = crate::utils::find(*mesh_entity, &query)
+        && let Ok((item, item_transform)) = item_query.get(entity)
     {
         let old_item = inventory.item.replace(*item);
         if let Some(old_item) = old_item {
@@ -68,18 +70,6 @@ fn pickup_item(
         // destroy old item
         commands.entity(entity).despawn();
     }
-}
-
-fn find_item<'a>(
-    entity: Entity,
-    query: &'a Query<(Option<&ChildOf>, Option<&Item>, &Transform)>,
-) -> Option<(Entity, &'a Item, &'a Transform)> {
-    let (parent, item, transform) = query.get(entity).ok()?;
-    if let Some(item) = item {
-        return Some((entity, item, transform));
-    }
-    let parent = parent?;
-    find_item(parent.0, query)
 }
 
 fn place_item(
@@ -130,15 +120,7 @@ fn discard_item(
         return;
     }
 
-    if let Some((
-        entity,
-        HitData {
-            position: Some(position),
-            normal: Some(normal),
-            ..
-        },
-    )) = pointer.get_nearest_hit()
-    {
+    if let Some((entity, _hit)) = pointer.get_nearest_hit() {
         if locations.get(*entity).is_err() {
             return;
         }

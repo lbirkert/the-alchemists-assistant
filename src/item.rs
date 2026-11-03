@@ -4,16 +4,29 @@ pub const ITEM_SIZE: f32 = 0.3;
 
 #[derive(Component, Default, Reflect, Debug, Clone)]
 #[reflect(Component)]
+#[require(Interactable::PlaceableLocation)]
 pub struct ItemsPlaceable;
 
 #[derive(Component, Default, Reflect, Debug, Clone)]
 #[reflect(Component)]
+#[require(Interactable::Discardable)]
 pub struct ItemsDiscardable;
 
 #[derive(Component, Reflect, Debug, Clone)]
 #[reflect(Component)]
+#[component(on_add)]
 pub struct ItemsSource {
     pub item: Item,
+}
+
+impl ItemsSource {
+    fn on_add(mut world: DeferredWorld, ctx: HookContext) {
+        let item = world.get::<Self>(ctx.entity).unwrap().item;
+        world
+            .commands()
+            .entity(ctx.entity)
+            .insert(Interactable::Source { item });
+    }
 }
 
 // we might want to use https://github.com/FraserLee/bevy_sprite3d/blob/main/examples/sprite.rs
@@ -21,6 +34,7 @@ pub struct ItemsSource {
 
 #[derive(Component, Reflect, Debug, Clone, Copy)]
 #[reflect(Component)]
+#[component(on_add)]
 pub enum Item {
     Garlic,
     Crystal,
@@ -29,10 +43,12 @@ pub enum Item {
 }
 
 impl Item {
-    pub fn display_name(&self) -> &'static str {
-        match self {
-            _ => "Unknown",
-        }
+    fn on_add(mut world: DeferredWorld, ctx: HookContext) {
+        let this = *world.get::<Self>(ctx.entity).unwrap();
+        world
+            .commands()
+            .entity(ctx.entity)
+            .insert(Interactable::Item(this));
     }
 
     pub fn scene(self, asset_server: &AssetServer, pos: Vec3) -> impl Scene {

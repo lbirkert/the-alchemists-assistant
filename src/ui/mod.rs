@@ -11,8 +11,10 @@ use focus::{FocusUpdate, FocusableItems};
 mod pause;
 mod settings;
 
+mod hud;
+
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((focus::plugin, settings::plugin, pause::plugin));
+    app.add_plugins((focus::plugin, settings::plugin, pause::plugin, hud::plugin));
 
     app.add_systems(OnEnter(MainMenuOpen(true)), setup);
     app.add_systems(OnExit(MainMenuOpen(true)), |mut commands: Commands| {

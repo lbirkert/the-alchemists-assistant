@@ -9,10 +9,10 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 #[derive(Component, Reflect, Debug, Clone, Default)]
-#[reflect(Component)]
-#[reflect(Default)]
+#[reflect(Component, Default)]
+#[require(Interactable::Drawer)]
 pub struct Drawer {
-    opened: bool,
+    pub opened: bool,
     #[reflect(ignore)]
     translation: Option<Vec3>,
 }
