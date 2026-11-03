@@ -13,7 +13,8 @@ pub(super) fn plugin(app: &mut App) {
 #[reflect(Default)]
 pub struct Drawer {
     opened: bool,
-    initial_translation: Option<Vec3>,
+    #[reflect(ignore)]
+    translation: Option<Vec3>,
 }
 
 fn toggle_drawer(
@@ -36,17 +37,15 @@ fn toggle_drawer(
             return;
         };
 
-        let initial_translation = drawer
-            .initial_translation
+        let translation = drawer
+            .translation
             .get_or_insert(transform.translation)
             .clone();
 
-        info!("toggle drawer!");
-
         let target = if drawer.opened {
-            transform.with_translation(Vec3::new(0.0, 0.0, 0.0) + initial_translation)
+            transform.with_translation(Vec3::new(0.0, 0.0, 0.0) + translation)
         } else {
-            transform.with_translation(Vec3::new(0.7, 0.0, 0.0) + initial_translation)
+            transform.with_translation(Vec3::new(0.7, 0.0, 0.0) + translation)
         };
         drawer.opened = !drawer.opened;
 

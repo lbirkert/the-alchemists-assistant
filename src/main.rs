@@ -5,6 +5,7 @@ mod debug;
 mod drawer;
 mod game_layer;
 mod inventory;
+mod item;
 mod player;
 mod prelude;
 mod scene;

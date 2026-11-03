@@ -74,7 +74,7 @@ fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) 
             #RightPlayerHand
             PlayerRightHand
             Visibility::Inherited
-            Transform::from_xyz(0.175, -0.4, -1.)
+            Transform::from_xyz(0.175, -0.25, -1.)
             DespawnOnExit::<GameState>(GameState::Game)
         ]
     });
