@@ -43,7 +43,7 @@ fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) 
         #Player
         Player
         Inventory {
-            item: Item::Herb { kind: HerbKind::Red }
+            item: Item::Garlic
         }
         Transform {
             translation: Vec3 {
@@ -209,12 +209,13 @@ fn player_look(
 
 fn update_player_item_preview(
     mut commands: Commands,
+    assets_server: Res<AssetServer>,
     inventory: Single<&Inventory, Changed<Inventory>>,
     right_hand: Single<Entity, With<PlayerRightHand>>,
     children: Query<&Children>,
 ) {
     if let Some(item) = inventory.item {
-        let scene = item.scene();
+        let scene = item.scene(&assets_server, Vec3::ZERO);
         commands.entity(*right_hand).apply_scene(bsn! {
             Children [
                 @scene

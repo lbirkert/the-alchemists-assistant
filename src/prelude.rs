@@ -1,5 +1,5 @@
 pub use crate::game_layer::GameLayer;
-pub use crate::inventory::{HerbKind, Inventory, Item, ItemsPlaceable};
+pub use crate::inventory::{Inventory, Item, ItemsPlaceable};
 pub use crate::player::PlayerCursor;
 pub use crate::scene::EnvironmentObject;
 pub use crate::settings::KeyBindings;
