@@ -63,7 +63,9 @@ struct CauldronLight;
     Name::new("Tree"),
     ProceduralTree(TreePreset::Oak.params()),
     TreeAge(10.0),
-    Growing::default(),
+    Growing {
+        rate: 0.0,
+    },
 )]
 struct Tree;
 
