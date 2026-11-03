@@ -1,3 +1,5 @@
+use bevy::ecs::query::QueryData;
+
 use crate::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
@@ -22,5 +24,20 @@ fn remove_meshes(
             Mesh3d,
             MeshMaterial3d<StandardMaterial>,
         )>();
+    }
+}
+
+pub fn find<C: Component>(
+    mut entity: Entity,
+    query: &Query<(Option<&ChildOf>, Has<C>)>,
+) -> Option<Entity> {
+    loop {
+        let (parent, has_item) = query.get(entity).ok()?;
+
+        if has_item {
+            return Some(entity);
+        }
+
+        entity = parent?.0;
     }
 }

@@ -2,6 +2,7 @@ use crate::prelude::*;
 
 mod camera;
 mod debug;
+mod drawer;
 mod game_layer;
 mod inventory;
 mod player;
@@ -45,6 +46,7 @@ pub fn main() -> AppExit {
         sounds::plugin,
         player::plugin,
         inventory::plugin,
+        drawer::plugin,
     ));
 
     app.run()
