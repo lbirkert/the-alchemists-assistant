@@ -2,7 +2,7 @@ use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 
 use crate::prelude::*;
 
-const DEBUG_ENABLED_DEFAULT: bool = cfg!(debug_assertions);
+const DEBUG_ENABLED_DEFAULT: bool = false;
 
 pub(super) fn plugin(app: &mut App) {
     // Inspector
