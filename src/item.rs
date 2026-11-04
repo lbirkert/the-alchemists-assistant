@@ -34,7 +34,6 @@ impl ItemsSource {
 
 #[derive(Component, Reflect, Debug, Clone, Copy)]
 #[reflect(Component)]
-#[component(on_add)]
 pub enum Item {
     Garlic,
     Crystal,
@@ -43,14 +42,6 @@ pub enum Item {
 }
 
 impl Item {
-    fn on_add(mut world: DeferredWorld, ctx: HookContext) {
-        let this = *world.get::<Self>(ctx.entity).unwrap();
-        world
-            .commands()
-            .entity(ctx.entity)
-            .insert(Interactable::Item(this));
-    }
-
     pub fn scene(self, asset_server: &AssetServer, pos: Vec3) -> impl Scene {
         let asset = match self {
             Item::Garlic => "Garlic.glb",
@@ -76,6 +67,7 @@ impl Item {
             LinearVelocity(vel)
             Collider::cuboid(1.0, 1.0, 1.0)
             @scene
+            Interactable::Item({self})
         }
     }
 }

@@ -15,15 +15,18 @@ pub struct PlayerInteraction {
     pub hit: HitData,
 }
 
-#[derive(Component, Reflect, Debug, Clone, Copy)]
+#[derive(Component, Reflect, Debug, Default, Clone, Copy)]
 #[reflect(Component)]
 #[require(DespawnOnExit<GameState> = DespawnOnExit(GameState::Game))]
 pub enum Interactable {
     Item(Item),
     PlaceableLocation,
     Discardable,
-    Source { item: Item },
+    Source {
+        item: Item,
+    },
     Drawer,
+    #[default]
     Mortar,
 }
 

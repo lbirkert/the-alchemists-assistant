@@ -17,6 +17,8 @@ struct AlchemyTable;
 #[component(on_add)]
 pub struct MortarStation {
     pub working: bool,
+    pub item: Option<Item>,
+    item_entity: Option<Entity>,
     timer: Timer,
 }
 
@@ -26,6 +28,8 @@ impl Default for MortarStation {
         timer.almost_finish();
         Self {
             working: false,
+            item: None,
+            item_entity: None,
             timer,
         }
     }
@@ -94,17 +98,37 @@ impl MortarStationArmature {
 }
 
 fn mortar_interaction(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut inventory: Single<&mut Inventory>,
     mut messages: MessageReader<PlayerInteraction>,
-    mut mortars: Query<(Entity, &mut MortarStation)>,
+    mut mortars: Query<&mut MortarStation>,
 ) {
     if let Some(PlayerInteraction {
         entity,
         kind: Interactable::Mortar,
         ..
     }) = messages.read().next()
-        && let Ok((_, mut mortar)) = mortars.get_mut(*entity)
+        && let Ok(mut mortar) = mortars.get_mut(*entity)
+        && !mortar.working
+        && (inventory.item.is_some() || mortar.item.is_some())
     {
-        mortar.working = true;
+        if let Some(item_entity) = mortar.item_entity.take() {
+            commands.entity(item_entity).despawn();
+        }
+        std::mem::swap(&mut inventory.item, &mut mortar.item);
+        if let Some(item) = mortar.item {
+            mortar.working = true;
+            let scene = item.scene(&asset_server, Vec3::new(0., 0.2, 0.));
+            let item_entity = commands
+                .spawn_scene(bsn! {
+                    #MortarItem
+                    ChildOf({*entity})
+                    @scene
+                })
+                .id();
+            mortar.item_entity = Some(item_entity);
+        }
     }
 }
 
