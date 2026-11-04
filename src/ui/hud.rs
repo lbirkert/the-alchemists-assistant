@@ -43,7 +43,7 @@ fn update_hud_text(
     mut text: Single<&mut Text, With<HudText>>,
 ) {
     let value = if let Some((mesh_entity, _hit)) = pointer.get_nearest_hit()
-        && let Some(entity) = crate::utils::find(*mesh_entity, &interactable_search)
+        && let Some(entity) = crate::utils::find_parent(*mesh_entity, &interactable_search)
         && let Ok(interactable) = interactables.get(entity)
     {
         match (interactable, inventory.item) {
@@ -62,8 +62,8 @@ fn update_hud_text(
                 Err(_) => "",
             }),
             (Interactable::Mortar, Some(in_hand)) => match mortars.get(entity) {
-                Ok(MortarStation { working: false }) => format!("[RMB] pestle {in_hand:?}"),
-                Ok(MortarStation { working: true }) | Err(_) => String::new(),
+                Ok(MortarStation { working: false, .. }) => format!("[RMB] pestle {in_hand:?}"),
+                Ok(MortarStation { working: true, .. }) | Err(_) => String::new(),
             },
             (
                 Interactable::PlaceableLocation | Interactable::Discardable | Interactable::Mortar,

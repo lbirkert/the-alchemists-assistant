@@ -38,7 +38,7 @@ fn interaction(
     }
 
     if let Some((mesh_entity, hit)) = pointer.get_nearest_hit()
-        && let Some(entity) = crate::utils::find(*mesh_entity, &query)
+        && let Some(entity) = crate::utils::find_parent(*mesh_entity, &query)
         && let Ok(interactable) = interactables.get(entity)
     {
         messages.write(PlayerInteraction {
