@@ -13,26 +13,59 @@ pub(super) fn plugin(app: &mut App) {
 #[reflect(Component)]
 struct HudText;
 
+const CROSSHAIR_SIZE: f32 = 20.;
+const CROSSHAIR_THICKNESS: f32 = 2.;
+
 fn setup(mut commands: Commands) {
     commands.spawn_scene(bsn! {
         #GameHud
         Node {
             width: percent(100),
             height: percent(100),
-            flex_direction: FlexDirection::Column,
-            row_gap: px(5),
-            align_items: AlignItems::End,
-            justify_content: JustifyContent::End,
-            padding: UiRect {
-                right: px(20),
-                bottom: px(10)
-            }
         }
         Pickable::IGNORE
         DespawnOnExit::<GamePaused>(GamePaused(false))
         Children [
             HudText
+            Node {
+                position_type: PositionType::Absolute,
+                right: px(20),
+                bottom: px(10),
+            }
             Text::new("")
+            --
+            #CrossHair
+            Node {
+                width: px(CROSSHAIR_SIZE),
+                height: px(CROSSHAIR_SIZE),
+                top: percent(50),
+                left: percent(50),
+                margin: UiRect {
+                    top: px(-CROSSHAIR_SIZE / 2.),
+                    left: px(-CROSSHAIR_SIZE / 2.),
+                },
+                position_type: PositionType::Absolute,
+            }
+            Pickable::IGNORE
+            Children [
+                Node {
+                    width: percent(100),
+                    height: px(CROSSHAIR_THICKNESS),
+                    top: px(CROSSHAIR_SIZE / 2. - CROSSHAIR_THICKNESS / 2.),
+                    position_type: PositionType::Absolute,
+                }
+                BackgroundColor(Color::WHITE)
+                Pickable::IGNORE
+                --
+                Node {
+                    width: px(CROSSHAIR_THICKNESS),
+                    height: percent(100),
+                    left: px(CROSSHAIR_SIZE / 2. - CROSSHAIR_THICKNESS / 2.),
+                    position_type: PositionType::Absolute,
+                }
+                BackgroundColor(Color::WHITE)
+                Pickable::IGNORE
+            ]
         ]
     });
 }
