@@ -16,7 +16,7 @@ pub struct ProcessingStation {
     set_animation: bool,
 }
 
-#[derive(Reflect, Default)]
+#[derive(Reflect, Default, Clone, Copy)]
 pub enum Station {
     #[default]
     Mortar,
@@ -29,6 +29,8 @@ pub enum StationState {
     Idle,
     Processing {
         working: bool,
+        /// Halfway through the process, the item will be replaced by it's target state.
+        transformed: bool,
         item: Item,
         item_entity: Entity,
         timer: Timer,
@@ -112,6 +114,17 @@ impl ProcessingStation {
     }
 }
 
+impl Station {
+    fn process_item(&self, item: &mut Item) {
+        *item = match item {
+            Item::Garlic => Item::Crystal,
+            Item::Crystal => Item::Flowers,
+            Item::Flowers => Item::Grass,
+            Item::Grass => Item::Garlic,
+        };
+    }
+}
+
 fn instance_ready_setup_armature(
     event: On<WorldInstanceReady>,
     mut commands: Commands,
@@ -175,6 +188,7 @@ fn station_interaction(
                     .id();
                 station.state = StationState::Processing {
                     working: true,
+                    transformed: false,
                     item,
                     item_entity,
                     timer: Timer::new(Duration::from_millis(2000), TimerMode::Once),
@@ -197,6 +211,8 @@ fn station_interaction(
 }
 
 fn update_station(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
     focus: Res<PlayerFocus>,
     input: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
@@ -225,10 +241,13 @@ fn update_station(
                     .repeat();
             }
         }
+
+        let station_kind = station.kind;
         match &mut station.state {
             StationState::Idle => {}
             StationState::Processing {
                 working,
+                transformed,
                 item,
                 item_entity,
                 timer,
@@ -238,6 +257,20 @@ fn update_station(
                 {
                     *working = true;
                     timer.tick(time.delta());
+                    if timer.fraction() > 0.5 && !*transformed {
+                        *transformed = true;
+                        station_kind.process_item(item);
+                        commands.entity(*item_entity).despawn();
+                        let scene = item.scene(&asset_server, Vec3::new(0., 0.2, 0.));
+                        let new_item_entity = commands
+                            .spawn_scene(bsn! {
+                                #StationItem
+                                ChildOf(entity)
+                                @scene
+                            })
+                            .id();
+                        *item_entity = new_item_entity;
+                    }
                     if timer.just_finished() {
                         station.state = StationState::Done {
                             item: *item,
