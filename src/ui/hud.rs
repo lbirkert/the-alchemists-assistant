@@ -45,7 +45,7 @@ fn update_hud_text(
         && let Some(entity) = crate::utils::find(*mesh_entity, &interactable_search)
         && let Ok(interactable) = interactables.get(entity)
     {
-        match (interactable, inventory.item) {
+        match (interactable, inventory.selection.as_ref()) {
             (Interactable::Item(item), Some(in_hand)) => {
                 format!("[RMB] swap {item} with {in_hand}")
             }

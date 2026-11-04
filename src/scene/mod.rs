@@ -45,7 +45,7 @@ struct ColliderFromMesh;
         radius: 400.0,
         color: Color::srgba(1.0, 1.0, 0.8, 1.0),
         shadow_maps_enabled: true,
-        shadow_map_near_z: 1.0,
+        shadow_map_near_z: 0.4,
         contact_shadows_enabled: false,
         ..Default::default()
     },

@@ -46,10 +46,10 @@ fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) 
         #Player
         Player
         Inventory {
-            item: Item::Garlic {
+            selection: Selection::Item(Item::Garlic {
                 is_washed: false,
                 state: ItemState::Unprocessed,
-            }
+            })
         }
         Transform {
             translation: PLAYER_SPAWN_POS
@@ -125,7 +125,7 @@ fn add_pointer(
 }
 
 fn update_pointer_pos(
-    camera: Single<&Camera, Changed<Camera>>,
+    camera: Single<&Camera, (Changed<Camera>, With<Camera3d>)>,
     mut cursor: Single<&mut PointerLocation, With<PlayerCursor>>,
 ) {
     let Some(size) = camera.logical_viewport_size() else {
@@ -223,7 +223,7 @@ fn update_player_item_preview(
     right_hand: Single<Entity, With<PlayerRightHand>>,
     children: Query<&Children>,
 ) {
-    if let Some(item) = inventory.item {
+    if let Some(Selection::Item(item)) = inventory.selection {
         let scene = item.scene(&assets_server, Vec3::ZERO);
         commands.entity(*right_hand).apply_scene(bsn! {
             Children [

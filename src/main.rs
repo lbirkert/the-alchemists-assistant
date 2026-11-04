@@ -13,6 +13,7 @@ mod scene;
 mod settings;
 mod sounds;
 mod state;
+mod sticky_notes;
 mod ui;
 mod utils;
 
@@ -54,6 +55,7 @@ pub fn main() -> AppExit {
         player::plugin,
         inventory::plugin,
         drawer::plugin,
+        sticky_notes::plugin,
     ));
 
     app.run()

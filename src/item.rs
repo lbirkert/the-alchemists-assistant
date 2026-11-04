@@ -108,6 +108,7 @@ impl Item {
         }
     }
 
+    // state machines. Can be copied to mortar.rs and slicing.rs once implemented
     pub fn mortar(self) -> Item {
         match self {
             Item::Garlic {
