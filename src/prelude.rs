@@ -13,6 +13,8 @@ pub use crate::state::{
 
 pub use std::time::Duration;
 
+pub use rand::seq::IndexedRandom as _;
+
 pub use bevy::ecs::lifecycle::HookContext;
 pub use bevy::ecs::world::DeferredWorld;
 pub use bevy::input::common_conditions::{input_just_pressed, input_toggle_active};

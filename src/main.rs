@@ -8,6 +8,7 @@ mod inventory;
 mod item;
 mod player;
 mod prelude;
+mod recipe;
 mod scene;
 mod settings;
 mod sounds;
@@ -16,6 +17,9 @@ mod ui;
 mod utils;
 
 pub fn main() -> AppExit {
+    let recipe = recipe::Recipe::generate();
+    println!("{:?}\n{}", recipe, recipe.manual());
+
     let mut app = App::new();
     // Bevy plugins
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
