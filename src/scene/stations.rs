@@ -68,7 +68,7 @@ impl ProcessingStation {
     const fn num_animations(&self) -> usize {
         match self.kind {
             Station::Mortar => 2,
-            Station::CuttingBoard => 0,
+            Station::CuttingBoard => 2,
         }
     }
 
@@ -97,16 +97,18 @@ impl ProcessingStation {
 
     fn get_idle_animation(&self, handle: &StationAnimations) -> Option<AnimationNodeIndex> {
         match self.kind {
-            Station::Mortar => handle.animations.first().copied(),
-            Station::CuttingBoard => None,
+            Station::Mortar => handle.animations.first(),
+            Station::CuttingBoard => handle.animations.get(1),
         }
+        .copied()
     }
 
     fn get_processing_animation(&self, handle: &StationAnimations) -> Option<AnimationNodeIndex> {
         match self.kind {
-            Station::Mortar => handle.animations.get(1).copied(),
-            Station::CuttingBoard => None,
+            Station::Mortar => handle.animations.get(1),
+            Station::CuttingBoard => handle.animations.first(),
         }
+        .copied()
     }
 }
 

@@ -79,13 +79,6 @@ fn spawn_scene(mut commands: Commands) {
         DespawnOnExit<GameState>(GameState::Game)
     });
 
-    commands.spawn_scene(bsn! {
-        #GameScene
-        WorldAssetRoot("CuttingBoard.glb#Scene0")
-        Transform::from_xyz(0., 2., 4.)
-        DespawnOnExit<GameState>(GameState::Game)
-    });
-
     commands.insert_resource(GlobalAmbientLight {
         color: Color::srgba(1.0, 1.0, 0.8, 1.0),
         brightness: 100.0,
