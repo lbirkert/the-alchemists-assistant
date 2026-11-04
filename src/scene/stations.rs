@@ -129,6 +129,7 @@ fn mortar_interaction(
                     timer: Timer::new(Duration::from_millis(2000), TimerMode::Once),
                 };
                 mortar.set_animation = true;
+                inventory.item = None;
             }
             (MortarState::Processing { .. }, _) => {
                 mortar.set_animation = true;
@@ -176,19 +177,24 @@ fn update_mortar(
                 item,
                 item_entity,
                 timer,
-            } if *working => {
+            } => {
                 if input.pressed(MouseButton::Right)
                     && focus.interactable == Some((entity, Interactable::Mortar))
                 {
+                    *working = true;
                     timer.tick(time.delta());
-                    if !timer.just_finished() {
-                        continue;
+                    if timer.just_finished() {
+                        mortar.state = MortarState::Done {
+                            item: *item,
+                            item_entity: *item_entity,
+                        };
+                        mortar.set_animation = true;
                     }
+                } else {
+                    *working = false;
+                    mortar.set_animation = true;
                 }
-                *working = false;
-                mortar.set_animation = true;
             }
-            MortarState::Processing { .. } => {}
             MortarState::Done { .. } => {}
         }
     }
