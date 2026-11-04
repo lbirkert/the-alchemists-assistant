@@ -4,6 +4,7 @@ mod camera;
 mod debug;
 mod drawer;
 mod game_layer;
+mod interaction;
 mod inventory;
 mod item;
 mod player;
@@ -46,6 +47,7 @@ pub fn main() -> AppExit {
         scene::plugin,
         sounds::plugin,
         player::plugin,
+        interaction::plugin,
         inventory::plugin,
         drawer::plugin,
     ));

@@ -4,3 +4,10 @@ use crate::prelude::*;
 #[reflect(Component)]
 #[require(EnvironmentObject, Collider::cuboid(2., 0.5, 0.8))]
 struct AlchemyTable;
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+#[require(Interactable::Mortar)]
+pub struct MortarStation {
+    pub working: bool,
+}

@@ -2,21 +2,11 @@ use crate::prelude::*;
 
 use bevy_flora::{FloraPlugin, Growing, ProceduralTree, TreeAge, TreePreset};
 
-mod stations;
+pub mod stations;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(ON_GAME_ENTER, spawn_scene);
     app.add_plugins(FloraPlugin);
-}
-
-#[derive(Component, Reflect, Debug, Clone, Copy)]
-#[reflect(Component)]
-pub enum Interactable {
-    Item(Item),
-    PlaceableLocation,
-    Discardable,
-    Source { item: Item },
-    Drawer,
 }
 
 #[derive(Component, Reflect, Default)]

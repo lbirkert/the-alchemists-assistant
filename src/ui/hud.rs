@@ -1,4 +1,4 @@
-use crate::{drawer::Drawer, prelude::*};
+use crate::{drawer::Drawer, prelude::*, scene::stations::MortarStation};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GamePaused(false)), setup);
@@ -39,6 +39,7 @@ fn update_hud_text(
     interactable_search: Query<(Option<&ChildOf>, Has<Interactable>)>,
     interactables: Query<&Interactable>,
     drawers: Query<&Drawer>,
+    mortars: Query<&MortarStation>,
     mut text: Single<&mut Text, With<HudText>>,
 ) {
     let value = if let Some((mesh_entity, _hit)) = pointer.get_nearest_hit()
@@ -55,12 +56,19 @@ fn update_hud_text(
             (Interactable::PlaceableLocation, Some(in_hand)) => format!("[RMB] place {in_hand:?}"),
             (Interactable::Discardable, Some(in_hand)) => format!("[RMB] discard {in_hand:?}"),
             (Interactable::Source { .. }, Some(_)) => String::new(),
-            (Interactable::PlaceableLocation | Interactable::Discardable, None) => String::new(),
             (Interactable::Drawer, _) => String::from(match drawers.get(entity) {
                 Ok(Drawer { opened: true, .. }) => "[RMB] close drawer",
                 Ok(Drawer { opened: false, .. }) => "[RMB] open drawer",
                 Err(_) => "",
             }),
+            (Interactable::Mortar, Some(in_hand)) => match mortars.get(entity) {
+                Ok(MortarStation { working: false }) => format!("[RMB] pestle {in_hand:?}"),
+                Ok(MortarStation { working: true }) | Err(_) => String::new(),
+            },
+            (
+                Interactable::PlaceableLocation | Interactable::Discardable | Interactable::Mortar,
+                None,
+            ) => String::new(),
         }
     } else {
         String::new()

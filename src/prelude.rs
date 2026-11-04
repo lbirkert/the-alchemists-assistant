@@ -1,10 +1,11 @@
 #![allow(unused_imports)]
 
 pub use crate::game_layer::GameLayer;
+pub use crate::interaction::{Interactable, PlayerInteraction};
 pub use crate::inventory::Inventory;
 pub use crate::item::{Item, ItemsDiscardable, ItemsPlaceable};
 pub use crate::player::PlayerCursor;
-pub use crate::scene::{EnvironmentObject, Interactable};
+pub use crate::scene::EnvironmentObject;
 pub use crate::settings::KeyBindings;
 pub use crate::state::{
     GamePaused, GamePostUpdate, GameState, GameUpdate, MainMenuOpen, ON_GAME_ENTER, ON_GAME_EXIT,
@@ -12,6 +13,8 @@ pub use crate::state::{
 };
 
 pub use std::time::Duration;
+
+pub use rand::seq::IndexedRandom as _;
 
 pub use bevy::ecs::lifecycle::HookContext;
 pub use bevy::ecs::world::DeferredWorld;
