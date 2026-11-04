@@ -61,6 +61,8 @@ fn update_hud_text(
                 Ok(Drawer { opened: false, .. }) => "[RMB] open drawer",
                 Err(_) => "",
             }),
+            (Interactable::StickyNote(_), None) => format!("[RMB] pick up Sticky Note"),
+            _ => "".to_string(),
         }
     } else {
         String::new()

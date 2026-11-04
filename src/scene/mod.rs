@@ -9,10 +9,11 @@ pub(super) fn plugin(app: &mut App) {
     app.add_plugins(FloraPlugin);
 }
 
-#[derive(Component, Reflect, Debug, Clone, Copy)]
+#[derive(Component, Reflect, Debug, Clone)]
 #[reflect(Component)]
 pub enum Interactable {
     Item(Item),
+    StickyNote(StickyNote),
     PlaceableLocation,
     Discardable,
     Source { item: Item },

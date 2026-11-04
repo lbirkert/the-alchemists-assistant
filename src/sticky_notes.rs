@@ -1,33 +1,8 @@
-use bevy::{camera::RenderTarget, render::render_resource::TextureFormat};
+use bevy::{
+    camera::RenderTarget, picking::backend::HitData, render::render_resource::TextureFormat,
+};
 
 use crate::{prelude::*, utils};
-
-// TODO: remove bc obsolete
-#[derive(Component, Reflect, Default, Debug, Clone, Copy)]
-#[reflect(Component)]
-pub struct Whiteboard;
-
-#[derive(Component, Reflect, Default, Debug, Clone)]
-#[reflect(Component)]
-pub struct NoteMaterial {
-    image_handle: Option<Handle<Image>>,
-}
-
-#[derive(Component, Reflect, Default, Debug, Clone)]
-#[reflect(Component)]
-#[reflect(Default)]
-pub struct StickyNote {
-    text: String,
-}
-
-#[derive(Component, Reflect, Default, Clone)]
-#[reflect(Component)]
-pub struct StickyNotePlaceable;
-
-#[derive(Resource)]
-pub struct CurrentRecipes {
-    pub recipes: Vec<Recipe>,
-}
 
 pub fn plugin(app: &mut App) {
     app.insert_resource(CurrentRecipes {
@@ -36,6 +11,76 @@ pub fn plugin(app: &mut App) {
     app.add_systems(GameUpdate, update_whiteboard);
     app.add_systems(GameUpdate, set_sticky_note_texture);
     app.add_systems(GameUpdate, pickup_sticky_note);
+    app.add_systems(GameUpdate, place_sticky_note);
+}
+
+// TODO: remove bc obsolete
+#[derive(Component, Reflect, Default, Debug, Clone, Copy)]
+#[reflect(Component)]
+pub struct Whiteboard;
+
+#[derive(Component, Reflect, Default, Debug, Clone)]
+#[reflect(Default)]
+#[reflect(Component)]
+#[component(on_remove)]
+pub struct NoteMaterial {
+    image_handle: Option<Handle<Image>>,
+    texture_camera: Option<Entity>,
+    texture_content: Option<Entity>,
+}
+
+impl NoteMaterial {
+    fn on_remove(mut world: DeferredWorld, context: HookContext) {
+        let Some(note_material) = world.get::<NoteMaterial>(context.entity).cloned() else {
+            return;
+        };
+
+        let mut commands = world.commands();
+
+        // despawn camera and content
+        if let Some(camera) = note_material.texture_camera {
+            commands.entity(camera).despawn();
+        }
+
+        if let Some(content) = note_material.texture_content {
+            commands.entity(content).despawn();
+        }
+
+        // remove material
+        if let Some(image) = note_material.image_handle {
+            commands.queue(move |world: &mut World| {
+                world.resource_mut::<Assets<Image>>().remove(image.id());
+            });
+        }
+    }
+}
+
+#[derive(Component, Reflect, Default, Debug, Clone)]
+#[reflect(Component)]
+#[reflect(Default)]
+#[component(on_add)]
+pub struct StickyNote {
+    text: String,
+}
+
+impl StickyNote {
+    fn on_add(mut world: DeferredWorld, ctx: HookContext) {
+        let this = world.get::<Self>(ctx.entity).unwrap().clone();
+        world
+            .commands()
+            .entity(ctx.entity)
+            .insert(Interactable::StickyNote(this));
+    }
+}
+
+#[derive(Component, Reflect, Default, Clone)]
+#[reflect(Component)]
+#[require(Interactable::PlaceableLocation)]
+pub struct StickyNotesPlaceable;
+
+#[derive(Resource)]
+pub struct CurrentRecipes {
+    pub recipes: Vec<Recipe>,
 }
 
 fn update_whiteboard(
@@ -58,7 +103,6 @@ fn update_whiteboard(
     info!("Spawn sticky note!");
 
     let scene = asset_server.load("StickyNotes.glb#Scene0");
-
     commands.entity(whiteboard).with_children(|parent| {
         parent.spawn((
             Name::new("StickyNote"),
@@ -75,7 +119,7 @@ fn pickup_sticky_note(
     input: Res<ButtonInput<MouseButton>>,
     mut inventory: Single<&mut Inventory>,
     pointer: Single<&PointerInteraction, With<PlayerCursor>>,
-    query: Query<(Option<&ChildOf>, Has<Item>)>,
+    query: Query<(Option<&ChildOf>, Has<StickyNote>)>,
     note_query: Query<(&StickyNote, &Transform)>,
 ) {
     if !input.just_pressed(MouseButton::Right) {
@@ -87,7 +131,7 @@ fn pickup_sticky_note(
     }
 
     if let Some((mesh_entity, _hit)) = pointer.get_nearest_hit()
-        && let Some(entity) = crate::utils::find(*mesh_entity, &query)
+        && let Some(entity) = crate::utils::find::<StickyNote>(*mesh_entity, &query)
         && let Ok((note, _note_transform)) = note_query.get(entity)
     {
         inventory.selection = Some(Selection::StickyNote(note.clone()));
@@ -97,43 +141,52 @@ fn pickup_sticky_note(
     }
 }
 
-// fn place_sticky_note(
-//     mut commands: Commands,
-//     assets_server: Res<AssetServer>,
-//     input: Res<ButtonInput<MouseButton>>,
-//     mut inventory: Single<&mut Inventory>,
-//     pointer: Single<&PointerInteraction, With<PlayerCursor>>,
-//     locations: Query<&Transform, With<StickyNotePlaceable>>,
-// ) {
-//     if !input.just_pressed(MouseButton::Right) {
-//         return;
-//     }
-//
-//     if let Some((
-//         entity,
-//         HitData {
-//             position: Some(position),
-//             normal: Some(normal),
-//             ..
-//         },
-//     )) = pointer.get_nearest_hit()
-//     {
-//         if locations.get(*entity).is_err() {
-//             return;
-//         }
-//
-//         let Some(item) = inventory.item.take() else {
-//             return;
-//         };
-//
-//         let item_scene = item.physics_scene(
-//             &assets_server,
-//             position + normal * ITEM_SIZE / 2.0,
-//             Vec3::ZERO,
-//         );
-//         commands.spawn_scene(item_scene);
-//     }
-// }
+fn place_sticky_note(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    input: Res<ButtonInput<MouseButton>>,
+    mut inventory: Single<&mut Inventory>,
+    pointer: Single<&PointerInteraction, With<PlayerCursor>>,
+    locations: Query<&Transform, With<StickyNotesPlaceable>>,
+) {
+    if !input.just_pressed(MouseButton::Right) {
+        return;
+    }
+
+    if !inventory
+        .selection
+        .as_ref()
+        .is_some_and(|i| i.is_sticky_node())
+    {
+        return;
+    }
+
+    if let Some((
+        entity,
+        HitData {
+            position: Some(position),
+            normal: Some(normal),
+            ..
+        },
+    )) = pointer.get_nearest_hit()
+    {
+        if locations.get(*entity).is_err() {
+            return;
+        }
+
+        let Some(Selection::StickyNote(sticky_note)) = inventory.selection.take() else {
+            return;
+        };
+
+        let scene = asset_server.load("StickyNotes.glb#Scene0");
+        commands.spawn((
+            Name::new("StickyNote"),
+            sticky_note,
+            WorldAssetRoot(scene),
+            Transform::from_translation(*position).looking_to(*normal, Vec3::Y),
+        ));
+    }
+}
 
 fn set_sticky_note_texture(
     mut commands: Commands,
@@ -164,7 +217,6 @@ fn set_sticky_note_texture(
 
             let image_handle = images.add(image);
 
-            // Camera rendering into the texture.
             let texture_camera = commands
                 .spawn((
                     Camera2d,
@@ -178,32 +230,35 @@ fn set_sticky_note_texture(
 
             let font: Handle<Font> = asset_server.load("FirstTimeWriting.ttf");
 
-            // UI rendered into the texture.
-            commands.spawn((
-                Node {
-                    width: percent(100),
-                    height: percent(100),
-                    justify_content: JustifyContent::Center,
-                    padding: UiRect::all(percent(5)),
-                    align_items: AlignItems::Start,
-                    ..default()
-                },
-                BackgroundColor(Color::srgb(1.0, 1.0, 0.5)),
-                UiTargetCamera(texture_camera),
-                children![(
-                    Text::new(note.text.clone()),
-                    TextFont {
-                        font_size: FontSize::Px(26.0),
-                        font: FontSource::Handle(font),
+            let texture_content = commands
+                .spawn((
+                    Node {
+                        width: percent(100),
+                        height: percent(100),
+                        justify_content: JustifyContent::Center,
+                        padding: UiRect::all(percent(5)),
+                        align_items: AlignItems::Start,
                         ..default()
                     },
-                    TextColor(Color::BLACK)
-                )],
-            ));
+                    BackgroundColor(Color::srgb(1.0, 1.0, 0.5)),
+                    UiTargetCamera(texture_camera),
+                    children![(
+                        Text::new(note.text.clone()),
+                        TextFont {
+                            font_size: FontSize::Px(26.0),
+                            font: FontSource::Handle(font),
+                            ..default()
+                        },
+                        TextColor(Color::BLACK)
+                    )],
+                ))
+                .id();
 
             info!("render text {}", note.text);
 
             note_material.image_handle = Some(image_handle.clone());
+            note_material.texture_camera = Some(texture_camera);
+            note_material.texture_content = Some(texture_content);
 
             material.base_color_texture = Some(image_handle);
         }

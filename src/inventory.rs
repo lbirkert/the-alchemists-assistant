@@ -29,6 +29,10 @@ impl Selection {
     pub fn is_item(&self) -> bool {
         matches!(self, Selection::Item(..))
     }
+
+    pub fn is_sticky_node(&self) -> bool {
+        matches!(self, Selection::StickyNote(..))
+    }
 }
 
 impl std::fmt::Display for Selection {
