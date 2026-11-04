@@ -36,10 +36,25 @@ impl ItemsSource {
 #[reflect(Component)]
 #[component(on_add)]
 pub enum Item {
-    Garlic,
-    Crystal,
-    Grass,
-    Flowers,
+    Garlic { state: ItemState, is_washed: bool },
+    Crystal { state: ItemState, is_washed: bool },
+    Grass { state: ItemState, is_washed: bool },
+    Flowers { state: ItemState, is_washed: bool },
+}
+
+#[derive(Reflect, Debug, Clone, Copy)]
+pub enum ItemState {
+    Unprocessed,
+    Sliced,
+    MortaredCoarse,
+    MortaredFine,
+}
+
+#[derive(Reflect, Debug, Clone, Copy)]
+pub enum MortarState {
+    None,
+    Coarse,
+    Fine,
 }
 
 impl Item {
@@ -51,13 +66,50 @@ impl Item {
             .insert(Interactable::Item(this));
     }
 
+    pub fn mortar(self) -> Item {
+        match self {
+            Item::Garlic {
+                state: ItemState::Unprocessed,
+                is_washed,
+            } => Item::Garlic {
+                state: ItemState::MortaredCoarse,
+                is_washed,
+            },
+            Item::Garlic {
+                state: ItemState::Sliced | ItemState::MortaredCoarse,
+                is_washed,
+            } => Item::Garlic {
+                state: ItemState::MortaredFine,
+                is_washed,
+            },
+            _ => self,
+        }
+    }
+
+    pub fn slice(self) -> Item {
+        match self {
+            Item::Garlic {
+                state: ItemState::Unprocessed,
+                is_washed,
+            } => Item::Garlic {
+                state: ItemState::Sliced,
+                is_washed,
+            },
+            _ => self,
+        }
+    }
+
     pub fn scene(self, asset_server: &AssetServer, pos: Vec3) -> impl Scene {
         let asset = match self {
-            Item::Garlic => "Garlic.glb",
-            Item::Grass => "Grass.glb",
-            Item::Flowers => "Flowers.glb",
-            Item::Crystal => "Crystal.glb",
-            _ => todo!(),
+            Item::Garlic { state, .. } => match state {
+                ItemState::Unprocessed => "Garlic.glb",
+                ItemState::Sliced => "GarlicSliced.glb",
+                ItemState::MortaredCoarse => "GarlicMortaredCoarse.glb",
+                ItemState::MortaredFine => "GarlicMortaredFine.glb",
+            },
+            Item::Grass { .. } => "Grass.glb",
+            Item::Flowers { .. } => "Flowers.glb",
+            Item::Crystal { .. } => "Crystal.glb",
         };
 
         let asset = asset_server.load(GltfAssetLabel::Scene(0).from_asset(asset));

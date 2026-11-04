@@ -1,26 +1,103 @@
 use crate::prelude::*;
 
-#[derive(Reflect, Clone, Copy, Debug)]
-pub enum ProcessingStep {
-    MortarAndPestle(Option<usize>),
-}
-
-pub enum ProcessingStepKind {
-    MortarAndPestle,
-}
-
-#[derive(Component, Reflect, Clone, Debug)]
-#[reflect(Component)]
-pub struct Ingredient {
-    raw_item: Item,
-    processing_steps: Vec<ProcessingStep>,
-}
-
 #[derive(Debug)]
 pub struct Recipe {
     customer_id: usize,
     ingredients: Vec<Ingredient>,
     stir_duration: i32,
+}
+
+#[derive(Debug)]
+pub struct Ingredient {
+    name: String,
+    manual: String,
+    item: Item,
+}
+
+#[rustfmt::skip]
+pub fn manual_suffix(state: &ItemState, is_washed: &bool) -> String {
+    match (is_washed, state) {
+        (false, ItemState::Unprocessed) => format!("Just add it to the cauldron."),
+        (false, ItemState::Sliced) => format!("Slice it and add it to the cauldron."),
+        (false, ItemState::MortaredCoarse) => format!("Crush it and add it to the cauldron."),
+        (false, ItemState::MortaredFine) => format!("Crush it well and add it to the cauldron."),
+        (true, ItemState::Unprocessed) => format!("Wash it and add it to the cauldron."),
+        (true, ItemState::Sliced) => format!("Wash it, slice it and add it to the cauldron."),
+        (true, ItemState::MortaredCoarse) => format!("Wash it, crush it and add it to the cauldron."),
+        (true, ItemState::MortaredFine) => format!("Wash it, crush it well and add it to the cauldron."),
+    }
+}
+
+pub fn name_prefix(state: &ItemState, is_washed: &bool) -> String {
+    match (is_washed, state) {
+        (false, ItemState::Unprocessed) => format!(""),
+        (false, ItemState::Sliced) => format!("Sliced "),
+        (false, ItemState::MortaredCoarse) => format!("Coarse-Mortared "),
+        (false, ItemState::MortaredFine) => format!("Fine-Mortared "),
+        (true, ItemState::Unprocessed) => format!("Washed "),
+        (true, ItemState::Sliced) => format!("Washed Sliced "),
+        (true, ItemState::MortaredCoarse) => format!("Washed Coarse-Mortared "),
+        (true, ItemState::MortaredFine) => format!("Washed Fine-Mortared "),
+    }
+}
+
+pub fn get_garlic_ingredients() -> Vec<Ingredient> {
+    const IS_WASHED: [bool; 2] = [false, true];
+    const STATES: [ItemState; 4] = [
+        ItemState::Unprocessed,
+        ItemState::Sliced,
+        ItemState::MortaredCoarse,
+        ItemState::MortaredFine,
+    ];
+
+    let mut ingredients = Vec::new();
+    for is_washed in IS_WASHED.iter() {
+        for state in STATES.iter() {
+            let name = format!("{}Garlic", name_prefix(state, is_washed));
+            ingredients.push(Ingredient {
+                manual: format!("{}. {}", name, manual_suffix(state, is_washed)),
+                item: Item::Garlic {
+                    is_washed: *is_washed,
+                    state: *state,
+                },
+                name,
+            });
+        }
+    }
+
+    ingredients
+}
+
+pub fn get_flower_ingredients() -> Vec<Ingredient> {
+    const IS_WASHED: [bool; 1] = [false];
+    const STATES: [ItemState; 3] = [
+        ItemState::Unprocessed,
+        ItemState::Sliced,
+        ItemState::MortaredFine,
+    ];
+
+    let mut ingredients = Vec::new();
+    for is_washed in IS_WASHED.iter() {
+        for state in STATES.iter() {
+            let name = format!("{}Flower", name_prefix(state, is_washed));
+            ingredients.push(Ingredient {
+                manual: format!("{}. {}", name, manual_suffix(state, is_washed)),
+                item: Item::Garlic {
+                    is_washed: *is_washed,
+                    state: *state,
+                },
+                name,
+            });
+        }
+    }
+    ingredients
+}
+
+pub fn get_ingredients() -> Vec<Vec<Ingredient>> {
+    let mut ingredients = Vec::new();
+    ingredients.push(get_garlic_ingredients());
+    ingredients.push(get_flower_ingredients());
+    ingredients
 }
 
 pub const GREETINGS: [&'static str; 3] = [
@@ -35,6 +112,7 @@ pub const CUSTOMERS: [&'static str; 4] = [
     "This one is for my cat too stop it from pooping everywhere!",
     "I think i've tried to make gold too often now. Anyways, be extra cautious!",
     "Note for Myself: Find out Albert's date of birth and make him a cake.",
+    // TODO: more characters
 ];
 
 pub const POSITIVE_RESULTS: [&'static str; 4] = [
@@ -64,7 +142,7 @@ pub const CONTINUE_PREFIXES: [&'static str; 6] = [
     "Continue with some ",
     "And we also need some ",
     "I forgot what exactly but maybe some ",
-    "We can also add some ",
+    "We can also add some",
     "It would surely make sense to add some ",
 ];
 
@@ -87,16 +165,23 @@ impl Recipe {
             let mut step_texts = Vec::new();
             for step in ingredient.processing_steps.iter() {
                 let step_text = match step {
-                    ProcessingStep::MortarAndPestle(Some(step)) => {
+                    ProcessingStep::Mortar(Some(step)) => {
                         format!(
                             " We need to crush it in the mortar. Make sure to do it {}!",
                             MORTAR_STEP_DESCRIPTIONS[*step]
                         )
                     }
-                    ProcessingStep::MortarAndPestle(_) => {
+                    ProcessingStep::Mortar(_) => {
                         format!(
                             " We need to crush it in the mortar. Doesn't really matter how much."
                         )
+                    }
+
+                    ProcessingStep::Wash => {
+                        format!(" Need to wash it until it's clean.")
+                    }
+                    ProcessingStep::Cut => {
+                        format!(" Make sure to cut it ")
                     }
                 };
                 step_texts.push(step_text);
@@ -126,7 +211,11 @@ impl Recipe {
 
         let mut ingredients = Vec::new();
         for _ in 0..num_ingredients {
-            let mut available_steps = vec![ProcessingStepKind::MortarAndPestle];
+            let mut available_steps = vec![
+                ProcessingStepKind::Mortar,
+                ProcessingStepKind::Wash,
+                ProcessingStepKind::Cut,
+            ];
 
             let num_steps = rand::random_range(0..=available_steps.len());
 
@@ -137,7 +226,9 @@ impl Recipe {
             for _ in 0..num_steps {
                 let step_idx = rand::random_range(0..available_steps.len());
                 let step = match available_steps.remove(step_idx) {
-                    ProcessingStepKind::MortarAndPestle => ProcessingStep::MortarAndPestle(None),
+                    ProcessingStepKind::Mortar => ProcessingStep::Mortar(None),
+                    ProcessingStepKind::Wash => ProcessingStep::Wash,
+                    ProcessingStepKind::Cut => ProcessingStep::Cut,
                 };
 
                 steps.push(step);

@@ -46,7 +46,10 @@ fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) 
         #Player
         Player
         Inventory {
-            item: Item::Garlic
+            item: Item::Garlic {
+                is_washed: false,
+                state: ItemState::Unprocessed,
+            }
         }
         Transform {
             translation: PLAYER_SPAWN_POS

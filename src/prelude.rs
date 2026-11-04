@@ -2,7 +2,7 @@
 
 pub use crate::game_layer::GameLayer;
 pub use crate::inventory::Inventory;
-pub use crate::item::{Item, ItemsDiscardable, ItemsPlaceable};
+pub use crate::item::{Item, ItemState, ItemsDiscardable, ItemsPlaceable};
 pub use crate::player::PlayerCursor;
 pub use crate::scene::{EnvironmentObject, Interactable};
 pub use crate::settings::KeyBindings;
