@@ -17,8 +17,10 @@ mod ui;
 mod utils;
 
 pub fn main() -> AppExit {
-    let recipe = recipe::Recipe::generate();
-    println!("{:?}\n{}", recipe, recipe.manual());
+    for _ in 0..10 {
+        let recipe = recipe::Recipe::generate();
+        println!("----\n{}", recipe.task_description);
+    }
 
     let mut app = App::new();
     // Bevy plugins

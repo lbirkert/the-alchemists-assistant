@@ -47,13 +47,13 @@ fn update_hud_text(
     {
         match (interactable, inventory.item) {
             (Interactable::Item(item), Some(in_hand)) => {
-                format!("[RMB] swap {item:?} with {in_hand:?}")
+                format!("[RMB] swap {item} with {in_hand}")
             }
             (Interactable::Item(item) | Interactable::Source { item }, None) => {
-                format!("[RMB] pick up {item:?}")
+                format!("[RMB] pick up {item}")
             }
-            (Interactable::PlaceableLocation, Some(in_hand)) => format!("[RMB] place {in_hand:?}"),
-            (Interactable::Discardable, Some(in_hand)) => format!("[RMB] discard {in_hand:?}"),
+            (Interactable::PlaceableLocation, Some(in_hand)) => format!("[RMB] place {in_hand}"),
+            (Interactable::Discardable, Some(in_hand)) => format!("[RMB] discard {in_hand}"),
             (Interactable::Source { .. }, Some(_)) => String::new(),
             (Interactable::PlaceableLocation | Interactable::Discardable, None) => String::new(),
             (Interactable::Drawer, _) => String::from(match drawers.get(entity) {

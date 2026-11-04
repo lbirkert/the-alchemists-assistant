@@ -57,13 +57,55 @@ pub enum MortarState {
     Fine,
 }
 
+impl std::fmt::Display for Item {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Item::Garlic { state, is_washed } => {
+                write!(f, "{}Garlic", Self::name_prefix(state, is_washed))
+            }
+            Item::Crystal { state, is_washed } => {
+                write!(f, "{}Crystal", Self::name_prefix(state, is_washed))
+            }
+            Item::Flowers { state, is_washed } => {
+                write!(f, "{}Flowers", Self::name_prefix(state, is_washed))
+            }
+            Item::Grass { state, is_washed } => {
+                write!(f, "{}Grass", Self::name_prefix(state, is_washed))
+            }
+        }
+    }
+}
+
 impl Item {
+    fn name_prefix(state: &ItemState, is_washed: &bool) -> String {
+        match (is_washed, state) {
+            (false, ItemState::Unprocessed) => format!(""),
+            (false, ItemState::Sliced) => format!("Sliced "),
+            (false, ItemState::MortaredCoarse) => format!("Coarse-Mortared "),
+            (false, ItemState::MortaredFine) => format!("Fine-Mortared "),
+            (true, ItemState::Unprocessed) => format!("Washed "),
+            (true, ItemState::Sliced) => format!("Washed Sliced "),
+            (true, ItemState::MortaredCoarse) => format!("Washed Coarse-Mortared "),
+            (true, ItemState::MortaredFine) => format!("Washed Fine-Mortared "),
+        }
+    }
+
     fn on_add(mut world: DeferredWorld, ctx: HookContext) {
         let this = *world.get::<Self>(ctx.entity).unwrap();
         world
             .commands()
             .entity(ctx.entity)
             .insert(Interactable::Item(this));
+    }
+
+    // returns a short description without the prefix
+    pub fn short(&self) -> &'static str {
+        match self {
+            Item::Garlic { .. } => "Garlic",
+            Item::Crystal { .. } => "Crystal",
+            Item::Grass { .. } => "Grass",
+            Item::Flowers { .. } => "Flowers",
+        }
     }
 
     pub fn mortar(self) -> Item {

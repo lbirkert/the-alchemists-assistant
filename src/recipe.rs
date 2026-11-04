@@ -2,102 +2,25 @@ use crate::prelude::*;
 
 #[derive(Debug)]
 pub struct Recipe {
-    customer_id: usize,
-    ingredients: Vec<Ingredient>,
-    stir_duration: i32,
+    pub task_description: String,
+    pub positive_result: String,
+    pub negative_result: String,
+    pub ingredients: Vec<Ingredient>,
+    pub stir_duration: i32, // do we need this?
 }
 
 #[derive(Debug)]
 pub struct Ingredient {
-    name: String,
-    manual: String,
+    steps_description: String,
     item: Item,
 }
 
-#[rustfmt::skip]
-pub fn manual_suffix(state: &ItemState, is_washed: &bool) -> String {
-    match (is_washed, state) {
-        (false, ItemState::Unprocessed) => format!("Just add it to the cauldron."),
-        (false, ItemState::Sliced) => format!("Slice it and add it to the cauldron."),
-        (false, ItemState::MortaredCoarse) => format!("Crush it and add it to the cauldron."),
-        (false, ItemState::MortaredFine) => format!("Crush it well and add it to the cauldron."),
-        (true, ItemState::Unprocessed) => format!("Wash it and add it to the cauldron."),
-        (true, ItemState::Sliced) => format!("Wash it, slice it and add it to the cauldron."),
-        (true, ItemState::MortaredCoarse) => format!("Wash it, crush it and add it to the cauldron."),
-        (true, ItemState::MortaredFine) => format!("Wash it, crush it well and add it to the cauldron."),
-    }
-}
+// for faervans PR
+pub struct Upgrades;
 
-pub fn name_prefix(state: &ItemState, is_washed: &bool) -> String {
-    match (is_washed, state) {
-        (false, ItemState::Unprocessed) => format!(""),
-        (false, ItemState::Sliced) => format!("Sliced "),
-        (false, ItemState::MortaredCoarse) => format!("Coarse-Mortared "),
-        (false, ItemState::MortaredFine) => format!("Fine-Mortared "),
-        (true, ItemState::Unprocessed) => format!("Washed "),
-        (true, ItemState::Sliced) => format!("Washed Sliced "),
-        (true, ItemState::MortaredCoarse) => format!("Washed Coarse-Mortared "),
-        (true, ItemState::MortaredFine) => format!("Washed Fine-Mortared "),
-    }
-}
-
-pub fn get_garlic_ingredients() -> Vec<Ingredient> {
-    const IS_WASHED: [bool; 2] = [false, true];
-    const STATES: [ItemState; 4] = [
-        ItemState::Unprocessed,
-        ItemState::Sliced,
-        ItemState::MortaredCoarse,
-        ItemState::MortaredFine,
-    ];
-
-    let mut ingredients = Vec::new();
-    for is_washed in IS_WASHED.iter() {
-        for state in STATES.iter() {
-            let name = format!("{}Garlic", name_prefix(state, is_washed));
-            ingredients.push(Ingredient {
-                manual: format!("{}. {}", name, manual_suffix(state, is_washed)),
-                item: Item::Garlic {
-                    is_washed: *is_washed,
-                    state: *state,
-                },
-                name,
-            });
-        }
-    }
-
-    ingredients
-}
-
-pub fn get_flower_ingredients() -> Vec<Ingredient> {
-    const IS_WASHED: [bool; 1] = [false];
-    const STATES: [ItemState; 3] = [
-        ItemState::Unprocessed,
-        ItemState::Sliced,
-        ItemState::MortaredFine,
-    ];
-
-    let mut ingredients = Vec::new();
-    for is_washed in IS_WASHED.iter() {
-        for state in STATES.iter() {
-            let name = format!("{}Flower", name_prefix(state, is_washed));
-            ingredients.push(Ingredient {
-                manual: format!("{}. {}", name, manual_suffix(state, is_washed)),
-                item: Item::Garlic {
-                    is_washed: *is_washed,
-                    state: *state,
-                },
-                name,
-            });
-        }
-    }
-    ingredients
-}
-
-pub fn get_ingredients() -> Vec<Vec<Ingredient>> {
-    let mut ingredients = Vec::new();
-    ingredients.push(get_garlic_ingredients());
-    ingredients.push(get_flower_ingredients());
-    ingredients
+enum NameGender {
+    Male,
+    Female,
 }
 
 pub const GREETINGS: [&'static str; 3] = [
@@ -107,144 +30,220 @@ pub const GREETINGS: [&'static str; 3] = [
     // TODO
 ];
 
-pub const CUSTOMERS: [&'static str; 4] = [
-    "My Mother asked me whether I can do something for her Skin. Please be careful with this one!",
-    "This one is for my cat too stop it from pooping everywhere!",
-    "I think i've tried to make gold too often now. Anyways, be extra cautious!",
-    "Note for Myself: Find out Albert's date of birth and make him a cake.",
-    // TODO: more characters
+const NAMES: [(NameGender, &'static str); 10] = [
+    (NameGender::Male, "Nate"),
+    (NameGender::Male, "Albert"),
+    (NameGender::Male, "Vincent"),
+    (NameGender::Male, "Walter"),
+    (NameGender::Male, "Bruno"),
+    (NameGender::Female, "Anna"),
+    (NameGender::Female, "Natasha"),
+    (NameGender::Female, "Louise"),
+    (NameGender::Female, "Sofia"),
+    (NameGender::Female, "Lex"),
 ];
 
-pub const POSITIVE_RESULTS: [&'static str; 4] = [
-    "She loves it. Thanks!",
-    "I think it works, oh yeah... Oh no! My Bad. Well Done though.",
-    "Not quite gold, but what I wanted. Well Done.",
-    "Albert just invited me to his birthday! Perfect. Anyways, well done!",
+const PROBLEMS: [&'static str; 10] = [
+    "{name} asked me to cure {article_possessive} cancer. Let's give it a try!",
+    "Yesterday I met {name} and {article_subject} asked me how to make {article_possessive} room plant grow bigger. Here's the recipe:",
+    "Have I told you about {name} yet? Anyways, {article_subject} needs something against {article_possessive} warts.",
+    "I think i've tried making gold enough. Anyways, try this:",
+    "Plankton asked me to recreate the Krabby Patty Secret Formula. Try this please:",
+    "I've got a pimple. Please stir this one up for me:",
+    "Donald asked me to cook something against those Democrats. Here's the recipe:",
+    "Child labor is awful! Anyways, can you cook this one up for me to extract more cobalt from the mines in africa?",
+    "{name}'s dog is barking all the time. This one's for the little rat:",
+    "Our plants look kinda dull. Cook this one up for me:",
 ];
 
-pub const NEGATIVE_RESULTS: [&'static str; 4] = [
-    "'Why is my skin yellow now?!?' 'I'm sorry Mother.' What did you do here?!? You need to improve your skills...",
-    "My cat now has diarrhea. Thank you. Please do it more accurately next time...",
-    "Not quite gold, but what I wanted. Well Done.",
-    "Albert just invited me to his birthday! Perfect. Anyways, well done!",
+const POSITIVE_RESULTS: [&'static str; 10] = [
+    "{article_subject} is cancer-free! Wait, that's not how medicine works... Anyways, well done!",
+    "The plant is HUGE! {article_subject} might need a bigger room now. Well done!",
+    "{article_possessive} warts are gone! {article_subject} says you're a miracle worker. Thank you!",
+    "This might actually make us rich! Investors are already calling. Well done!",
+    "Plankton says it tastes exactly like the original. He's suspiciously happy. Good job!",
+    "The pimple is gone! My face has never looked this good. Well done!",
+    "Donald loves it! He says it's exactly what America needed. Well done!",
+    "The cobalt extraction rate has doubled! The workers are... surprisingly productive. Well done!",
+    "The dog hasn't barked in hours. The neighbors (and me) are finally at peace. Well done!",
+    "The plants look amazing! My garden is basically a jungle now. Well done!",
 ];
 
-pub const START_PREFIXES: [&'static str; 5] = [
-    "Start with ",
-    "Firstly add ",
-    "First, ",
-    "I think for this one start with ",
-    "I'm not quite sure but try ",
+const NEGATIVE_RESULTS: [&'static str; 10] = [
+    "I don't think this bump's normal! What did you put in there?! Maybe leave medicine to the professionals...",
+    "The plant is dead. {article_subject} specifically asked you NOT to kill it. What did you do?!",
+    "{article_possessive} warts have quadrupled! {article_subject} is starting to look like a toad. Please improve your skills...",
+    "We're somehow even poorer now. Maybe Mom was right when she told me to get a *real* job...",
+    "I don't think Mr. Crabs approves this. Try again next time...",
+    "My pimple has grown a friend. They're practically a family now. What do I do now?!",
+    "Donald is furious! The Democrats just multiplied. Quite an achievement...",
+    "The cobalt production has stopped entirely due to hazardous substances. Maybe need try that again...",
+    "The dog is now barking twice as loud. The neighbors are threatening to call the cops on me...",
+    "The plants look even worse! One of them actually turned brown while I was watching. You need to improve...",
 ];
 
-pub const CONTINUE_PREFIXES: [&'static str; 6] = [
-    "Then also add ",
+const START_PREFIXES: [&'static str; 5] = [
+    "Start with some ",
+    "Begin with some ",
+    "First, add some ",
+    "For this one start with ",
+    "Try to start with some ",
+];
+
+const CONTINUE_PREFIXES: [&'static str; 6] = [
+    "Also add some ",
     "Continue with some ",
-    "And we also need some ",
-    "I forgot what exactly but maybe some ",
-    "We can also add some",
-    "It would surely make sense to add some ",
+    "We also need some ",
+    "Maybe add some ",
+    "We can also add some ",
+    "Add some ",
 ];
-
-pub const MORTAR_STEP_DESCRIPTIONS: [&'static str; 2] =
-    ["short so it stays coarse", "thoroughly until it's fine"];
 
 impl Recipe {
-    pub fn manual(&self) -> String {
-        let customer_text = CUSTOMERS[self.customer_id];
-        let mut rng = rand::rng();
+    #[rustfmt::skip]
+    fn steps_description(state: &ItemState, is_washed: &bool) -> String {
+    match (is_washed, state) {
+        (false, ItemState::Unprocessed) => format!("Just add to the cauldron."),
+        (false, ItemState::Sliced) => format!("Slice and add to the cauldron."),
+        (false, ItemState::MortaredCoarse) => format!("Crush and add to the cauldron."),
+        (false, ItemState::MortaredFine) => format!("Crush well and add to the cauldron."),
+        (true, ItemState::Unprocessed) => format!("Wash and add to the cauldron."),
+        (true, ItemState::Sliced) => format!("Wash, slice and add to the cauldron."),
+        (true, ItemState::MortaredCoarse) => format!("Wash, crush and add to the cauldron."),
+        (true, ItemState::MortaredFine) => format!("Wash, crush fine and add to the cauldron."),
+    }
+}
 
+    fn get_garlic_ingredients(upgrades: &Upgrades) -> Vec<Ingredient> {
+        const IS_WASHED: [bool; 2] = [false, true];
+        const STATES: [ItemState; 4] = [
+            ItemState::Unprocessed,
+            ItemState::Sliced,
+            ItemState::MortaredCoarse,
+            ItemState::MortaredFine,
+        ];
+
+        let mut ingredients = Vec::new();
+        for is_washed in IS_WASHED.iter() {
+            for state in STATES.iter() {
+                // TODO: check upgrades for valid ingredients
+                ingredients.push(Ingredient {
+                    steps_description: Self::steps_description(state, is_washed),
+                    item: Item::Garlic {
+                        is_washed: *is_washed,
+                        state: *state,
+                    },
+                });
+            }
+        }
+
+        ingredients
+    }
+
+    fn get_flowers_ingredients(upgrades: &Upgrades) -> Vec<Ingredient> {
+        const IS_WASHED: [bool; 1] = [false];
+        const STATES: [ItemState; 3] = [
+            ItemState::Unprocessed,
+            ItemState::Sliced,
+            ItemState::MortaredFine,
+        ];
+
+        let mut ingredients = Vec::new();
+        for is_washed in IS_WASHED.iter() {
+            for state in STATES.iter() {
+                // TODO: check upgrades for valid ingredients
+                ingredients.push(Ingredient {
+                    steps_description: Self::steps_description(state, is_washed),
+                    item: Item::Flowers {
+                        is_washed: *is_washed,
+                        state: *state,
+                    },
+                });
+            }
+        }
+
+        ingredients
+    }
+
+    fn get_ingredients(upgrades: &Upgrades) -> Vec<Vec<Ingredient>> {
+        let mut ingredients = Vec::new();
+        ingredients.push(Self::get_garlic_ingredients(&upgrades));
+        ingredients.push(Self::get_flowers_ingredients(&upgrades));
+        ingredients
+    }
+
+    pub fn generate() -> Self {
+        let mut rng = rand::rng();
+        let mut available_ingredients = Self::get_ingredients(&Upgrades);
+        let num_ingredients = rand::random_range(2..=available_ingredients.len());
+
+        let mut ingredients = Vec::new();
         let mut ingredient_texts = Vec::new();
-        for (i, ingredient) in self.ingredients.iter().enumerate() {
-            let prefix = if i == 0 {
+        for ingredient_no in 0..num_ingredients {
+            let index = rand::random_range(0..available_ingredients.len());
+            let mut sub_ingredients = available_ingredients.remove(index);
+            let index = rand::random_range(0..sub_ingredients.len());
+            let ingredient = sub_ingredients.remove(index);
+
+            let prefix = if ingredient_no == 0 {
                 START_PREFIXES.choose(&mut rng).unwrap()
             } else {
                 CONTINUE_PREFIXES.choose(&mut rng).unwrap()
             };
 
-            let mut step_texts = Vec::new();
-            for step in ingredient.processing_steps.iter() {
-                let step_text = match step {
-                    ProcessingStep::Mortar(Some(step)) => {
-                        format!(
-                            " We need to crush it in the mortar. Make sure to do it {}!",
-                            MORTAR_STEP_DESCRIPTIONS[*step]
-                        )
-                    }
-                    ProcessingStep::Mortar(_) => {
-                        format!(
-                            " We need to crush it in the mortar. Doesn't really matter how much."
-                        )
-                    }
-
-                    ProcessingStep::Wash => {
-                        format!(" Need to wash it until it's clean.")
-                    }
-                    ProcessingStep::Cut => {
-                        format!(" Make sure to cut it ")
-                    }
-                };
-                step_texts.push(step_text);
-            }
-
-            let step_texts = step_texts.join("");
-
-            let ingredient_text = format!("{}{:?}.{} ", prefix, ingredient.raw_item, step_texts);
+            let ingredient_text = format!(
+                "{}{}. {}",
+                prefix,
+                ingredient.item.short(),
+                ingredient.steps_description
+            );
 
             ingredient_texts.push(ingredient_text);
+            ingredients.push(ingredient);
         }
 
-        let ingredient_texts = ingredient_texts.join("");
-
-        let stir_text = format!("Make sure to stir for {} seconds!", self.stir_duration);
-
-        format!(
-            "{}\n\nIngredients:\n{}\n\n{}",
-            customer_text, ingredient_texts, stir_text
-        )
-    }
-
-    pub fn generate() -> Self {
-        let mut available_items = vec![Item::Garlic, Item::Crystal, Item::Flowers, Item::Grass];
-
-        let num_ingredients = rand::random_range(2..=available_items.len());
-
-        let mut ingredients = Vec::new();
-        for _ in 0..num_ingredients {
-            let mut available_steps = vec![
-                ProcessingStepKind::Mortar,
-                ProcessingStepKind::Wash,
-                ProcessingStepKind::Cut,
-            ];
-
-            let num_steps = rand::random_range(0..=available_steps.len());
-
-            let item_idx = rand::random_range(0..available_items.len());
-            let item = available_items.remove(item_idx);
-
-            let mut steps = Vec::new();
-            for _ in 0..num_steps {
-                let step_idx = rand::random_range(0..available_steps.len());
-                let step = match available_steps.remove(step_idx) {
-                    ProcessingStepKind::Mortar => ProcessingStep::Mortar(None),
-                    ProcessingStepKind::Wash => ProcessingStep::Wash,
-                    ProcessingStepKind::Cut => ProcessingStep::Cut,
-                };
-
-                steps.push(step);
-            }
-
-            ingredients.push(Ingredient {
-                raw_item: item,
-                processing_steps: steps,
-            });
-        }
-
-        let customer_id = rand::random_range(0..CUSTOMERS.len());
+        let ingredient_texts = ingredient_texts.join("\n");
         let stir_duration = rand::random_range(10..=30);
 
+        let stir_text = format!("Stir for {} seconds and fill in a flask!", stir_duration);
+
+        let name_id = rand::random_range(0..NAMES.len());
+        let (ref gender, name) = NAMES[name_id];
+        let (article_subject, article_object, article_possesive) = match gender {
+            NameGender::Female => ("She", "Her", "Her"),
+            NameGender::Male => ("He", "Him", "His"),
+        };
+
+        let problem_id = rand::random_range(0..PROBLEMS.len());
+        let problem_text = PROBLEMS[problem_id]
+            .replace("{name}", name)
+            .replace("{article_subject}", article_subject)
+            .replace("{article_object}", article_object)
+            .replace("{article_possessive}", article_possesive);
+
+        let positive_result = POSITIVE_RESULTS[problem_id]
+            .replace("{name}", name)
+            .replace("{article_subject}", article_subject)
+            .replace("{article_object}", article_object)
+            .replace("{article_possessive}", article_possesive);
+
+        let negative_result = NEGATIVE_RESULTS[problem_id]
+            .replace("{name}", name)
+            .replace("{article_subject}", article_subject)
+            .replace("{article_object}", article_object)
+            .replace("{article_possessive}", article_possesive);
+
+        let task_description = format!(
+            "{}\n\nIngredients:\n{}\n\n{}",
+            problem_text, ingredient_texts, stir_text
+        );
+
+        // generate
+
         Self {
-            customer_id,
+            task_description,
+            positive_result,
+            negative_result,
             ingredients,
             stir_duration,
         }
