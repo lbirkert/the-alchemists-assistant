@@ -17,6 +17,7 @@ pub struct PlayerInteraction {
 
 #[derive(Component, Reflect, Debug, Clone, Copy)]
 #[reflect(Component)]
+#[require(DespawnOnExit<GameState> = DespawnOnExit(GameState::Game))]
 pub enum Interactable {
     Item(Item),
     PlaceableLocation,
