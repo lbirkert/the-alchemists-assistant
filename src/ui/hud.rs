@@ -55,7 +55,7 @@ fn update_hud_text(
             }
             (Interactable::PlaceableLocation, Some(in_hand)) => format!("[RMB] place {in_hand:?}"),
             (Interactable::Discardable, Some(in_hand)) => format!("[RMB] discard {in_hand:?}"),
-            (Interactable::Source { .. }, Some(_)) => String::new(),
+            (Interactable::Source { .. }, Some(in_hand)) => format!("Already holding {in_hand:?}"),
             (Interactable::Drawer, _) => String::from(match drawers.get(entity) {
                 Ok(Drawer { opened: true, .. }) => "[RMB] close drawer",
                 Ok(Drawer { opened: false, .. }) => "[RMB] open drawer",

@@ -5,8 +5,11 @@ use bevy_flora::{FloraPlugin, Growing, ProceduralTree, TreeAge, TreePreset};
 pub mod stations;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(ON_GAME_ENTER, spawn_scene);
+    app.add_plugins(stations::plugin);
+
     app.add_plugins(FloraPlugin);
+
+    app.add_systems(ON_GAME_ENTER, spawn_scene);
 }
 
 #[derive(Component, Reflect, Default)]

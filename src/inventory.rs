@@ -1,9 +1,6 @@
 use bevy::picking::backend::HitData;
 
-use crate::{
-    item::{ITEM_SIZE, ItemsSource},
-    prelude::*,
-};
+use crate::{item::ITEM_SIZE, prelude::*};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(GameUpdate, pickup_item);
@@ -20,46 +17,41 @@ pub struct Inventory {
 }
 
 fn pickup_item_from_source(
-    input: Res<ButtonInput<MouseButton>>,
+    mut messages: MessageReader<PlayerInteraction>,
     mut inventory: Single<&mut Inventory>,
-    pointer: Single<&PointerInteraction, With<PlayerCursor>>,
-    items_sources: Query<&ItemsSource>,
 ) {
-    if !input.just_pressed(MouseButton::Right) {
+    let Some(PlayerInteraction {
+        kind: Interactable::Source { item: source },
+        ..
+    }) = messages.read().next()
+    else {
+        return;
+    };
+
+    if inventory.item.is_some() {
         return;
     }
 
-    if let Some((entity, _hit)) = pointer.get_nearest_hit() {
-        let Ok(items_source) = items_sources.get(*entity) else {
-            return;
-        };
-
-        if inventory.item.is_some() {
-            return;
-            // TODO: also display a message here?
-        }
-
-        inventory.item = Some(items_source.item);
-    }
+    inventory.item = Some(*source);
 }
 
 fn pickup_item(
+    mut messages: MessageReader<PlayerInteraction>,
     mut commands: Commands,
     assets_server: Res<AssetServer>,
-    input: Res<ButtonInput<MouseButton>>,
     mut inventory: Single<&mut Inventory>,
-    pointer: Single<&PointerInteraction, With<PlayerCursor>>,
-    query: Query<(Option<&ChildOf>, Has<Item>)>,
-    item_query: Query<(&Item, &Transform)>,
+    transforms: Query<&Transform>,
 ) {
-    if !input.just_pressed(MouseButton::Right) {
+    let Some(PlayerInteraction {
+        entity,
+        kind: Interactable::Item(item),
+        ..
+    }) = messages.read().next()
+    else {
         return;
-    }
+    };
 
-    if let Some((mesh_entity, _hit)) = pointer.get_nearest_hit()
-        && let Some(entity) = crate::utils::find(*mesh_entity, &query)
-        && let Ok((item, item_transform)) = item_query.get(entity)
-    {
+    if let Ok(item_transform) = transforms.get(*entity) {
         let old_item = inventory.item.replace(*item);
         if let Some(old_item) = old_item {
             let item_scene =
@@ -68,63 +60,53 @@ fn pickup_item(
         }
 
         // destroy old item
-        commands.entity(entity).despawn();
+        commands.entity(*entity).despawn();
     }
 }
 
 fn place_item(
+    mut messages: MessageReader<PlayerInteraction>,
     mut commands: Commands,
     assets_server: Res<AssetServer>,
-    input: Res<ButtonInput<MouseButton>>,
     mut inventory: Single<&mut Inventory>,
-    pointer: Single<&PointerInteraction, With<PlayerCursor>>,
-    locations: Query<&Transform, With<ItemsPlaceable>>,
 ) {
-    if !input.just_pressed(MouseButton::Right) {
+    let Some(PlayerInteraction {
+        kind: Interactable::PlaceableLocation,
+        hit:
+            HitData {
+                position: Some(position),
+                normal: Some(normal),
+                ..
+            },
+        ..
+    }) = messages.read().next()
+    else {
         return;
-    }
+    };
 
-    if let Some((
-        entity,
-        HitData {
-            position: Some(position),
-            normal: Some(normal),
-            ..
-        },
-    )) = pointer.get_nearest_hit()
-    {
-        if locations.get(*entity).is_err() {
-            return;
-        }
+    let Some(item) = inventory.item.take() else {
+        return;
+    };
 
-        let Some(item) = inventory.item.take() else {
-            return;
-        };
-
-        let item_scene = item.physics_scene(
-            &assets_server,
-            position + normal * ITEM_SIZE / 2.0,
-            Vec3::ZERO,
-        );
-        commands.spawn_scene(item_scene);
-    }
+    let item_scene = item.physics_scene(
+        &assets_server,
+        position + normal * ITEM_SIZE / 2.0,
+        Vec3::ZERO,
+    );
+    commands.spawn_scene(item_scene);
 }
 
 fn discard_item(
-    input: Res<ButtonInput<MouseButton>>,
+    mut messages: MessageReader<PlayerInteraction>,
     mut inventory: Single<&mut Inventory>,
-    pointer: Single<&PointerInteraction, With<PlayerCursor>>,
-    locations: Query<&Transform, With<ItemsDiscardable>>,
 ) {
-    if !input.just_pressed(MouseButton::Right) {
+    let Some(PlayerInteraction {
+        kind: Interactable::Discardable,
+        ..
+    }) = messages.read().next()
+    else {
         return;
-    }
+    };
 
-    if let Some((entity, _hit)) = pointer.get_nearest_hit() {
-        if locations.get(*entity).is_err() {
-            return;
-        }
-
-        inventory.item = None;
-    }
+    inventory.item = None;
 }
