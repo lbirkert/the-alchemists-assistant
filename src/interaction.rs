@@ -27,14 +27,14 @@ pub struct PlayerInteraction {
 #[require(DespawnOnExit<GameState> = DespawnOnExit(GameState::Game))]
 pub enum Interactable {
     Item(Item),
+    #[default]
     PlaceableLocation,
     Discardable,
     Source {
         item: Item,
     },
     Drawer,
-    #[default]
-    Mortar,
+    Station,
 }
 
 fn interaction(

@@ -1,7 +1,7 @@
 use crate::{
     drawer::Drawer,
     prelude::*,
-    scene::stations::{MortarState, MortarStation},
+    scene::stations::{ProcessingStation, StationState},
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -76,7 +76,7 @@ fn update_hud_text(
     interactable_search: Query<(Option<&ChildOf>, Has<Interactable>)>,
     interactables: Query<&Interactable>,
     drawers: Query<&Drawer>,
-    mortars: Query<&MortarStation>,
+    mortars: Query<&ProcessingStation>,
     mut text: Single<&mut Text, With<HudText>>,
 ) {
     let value = if let Some((mesh_entity, _hit)) = pointer.get_nearest_hit()
@@ -85,40 +85,45 @@ fn update_hud_text(
     {
         match (interactable, inventory.item) {
             (Interactable::Item(item), Some(in_hand)) => {
-                format!("[RMB] swap {item:?} with {in_hand:?}")
+                format!("[RMB] Swap {item:?} with {in_hand:?}")
             }
             (Interactable::Item(item) | Interactable::Source { item }, None) => {
-                format!("[RMB] pick up {item:?}")
+                format!("[RMB] Pick up {item:?}")
             }
-            (Interactable::PlaceableLocation, Some(in_hand)) => format!("[RMB] place {in_hand:?}"),
-            (Interactable::Discardable, Some(in_hand)) => format!("[RMB] discard {in_hand:?}"),
+            (Interactable::PlaceableLocation, Some(in_hand)) => format!("[RMB] Place {in_hand:?}"),
+            (Interactable::Discardable, Some(in_hand)) => format!("[RMB] Discard {in_hand:?}"),
             (Interactable::Source { .. }, Some(in_hand)) => format!("Already holding {in_hand:?}"),
             (Interactable::Drawer, _) => String::from(match drawers.get(entity) {
-                Ok(Drawer { opened: true, .. }) => "[RMB] close drawer",
-                Ok(Drawer { opened: false, .. }) => "[RMB] open drawer",
+                Ok(Drawer { opened: true, .. }) => "[RMB] Close drawer",
+                Ok(Drawer { opened: false, .. }) => "[RMB] Open drawer",
                 Err(_) => "",
             }),
-            (Interactable::Mortar, _) => {
-                if let Ok(mortar) = mortars.get(entity) {
-                    match (&mortar.state, inventory.item) {
-                        (MortarState::Idle, Some(in_hand)) => format!("[RMB] pestle {in_hand:?}"),
+            (Interactable::Station, _) => {
+                if let Ok(station) = mortars.get(entity) {
+                    match (&station.state, inventory.item) {
+                        (StationState::Idle, Some(in_hand)) => {
+                            format!("[RMB] {} {in_hand:?}", station.base_verb(true))
+                        }
                         (
-                            MortarState::Processing {
+                            StationState::Processing {
                                 working: false,
                                 item,
                                 ..
                             },
                             None,
-                        ) => format!("[RMB] continue pestling {item:?}"),
+                        ) => format!("[RMB] Continue {} {item:?}", station.ing_verb()),
                         (
-                            MortarState::Processing {
+                            StationState::Processing {
                                 working: false,
                                 item,
                                 ..
                             },
                             Some(in_hand),
-                        ) => format!("[RMB] cannot pestle {item:?} while holding {in_hand:?}"),
-                        (MortarState::Done { item, .. }, None) => format!("[RMB] take {item:?}"),
+                        ) => format!(
+                            "[RMB] Cannot {} {item:?} while holding {in_hand:?}",
+                            station.base_verb(false)
+                        ),
+                        (StationState::Done { item, .. }, None) => format!("[RMB] Take {item:?}"),
                         _ => String::new(),
                     }
                 } else {
