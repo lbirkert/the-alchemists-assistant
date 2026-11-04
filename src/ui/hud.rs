@@ -1,4 +1,8 @@
-use crate::{drawer::Drawer, prelude::*, scene::stations::MortarStation};
+use crate::{
+    drawer::Drawer,
+    prelude::*,
+    scene::stations::{MortarState, MortarStation},
+};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GamePaused(false)), setup);
@@ -61,14 +65,34 @@ fn update_hud_text(
                 Ok(Drawer { opened: false, .. }) => "[RMB] open drawer",
                 Err(_) => "",
             }),
-            (Interactable::Mortar, Some(in_hand)) => match mortars.get(entity) {
-                Ok(MortarStation { working: false, .. }) => format!("[RMB] pestle {in_hand:?}"),
-                Ok(MortarStation { working: true, .. }) | Err(_) => String::new(),
-            },
-            (
-                Interactable::PlaceableLocation | Interactable::Discardable | Interactable::Mortar,
-                None,
-            ) => String::new(),
+            (Interactable::Mortar, _) => {
+                if let Ok(mortar) = mortars.get(entity) {
+                    match (&mortar.state, inventory.item) {
+                        (MortarState::Idle, Some(in_hand)) => format!("[RMB] pestle {in_hand:?}"),
+                        (
+                            MortarState::Processing {
+                                working: false,
+                                item,
+                                ..
+                            },
+                            None,
+                        ) => format!("[RMB] continue pestling {item:?}"),
+                        (
+                            MortarState::Processing {
+                                working: false,
+                                item,
+                                ..
+                            },
+                            Some(in_hand),
+                        ) => format!("[RMB] cannot pestle {item:?} while holding {in_hand:?}"),
+                        (MortarState::Done { item, .. }, None) => format!("[RMB] take {item:?}"),
+                        _ => String::new(),
+                    }
+                } else {
+                    String::new()
+                }
+            }
+            (Interactable::PlaceableLocation | Interactable::Discardable, None) => String::new(),
         }
     } else {
         String::new()

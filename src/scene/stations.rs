@@ -11,28 +11,29 @@ pub(super) fn plugin(app: &mut App) {
 #[require(EnvironmentObject, Collider::cuboid(2., 0.5, 0.8))]
 struct AlchemyTable;
 
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Default)]
 #[reflect(Component, Default)]
 #[require(Interactable::Mortar)]
 #[component(on_add)]
 pub struct MortarStation {
-    pub working: bool,
-    pub item: Option<Item>,
-    item_entity: Option<Entity>,
-    timer: Timer,
+    pub state: MortarState,
+    set_animation: bool,
 }
 
-impl Default for MortarStation {
-    fn default() -> Self {
-        let mut timer = Timer::new(Duration::from_millis(2000), TimerMode::Once);
-        timer.almost_finish();
-        Self {
-            working: false,
-            item: None,
-            item_entity: None,
-            timer,
-        }
-    }
+#[derive(Reflect, Default)]
+pub enum MortarState {
+    #[default]
+    Idle,
+    Processing {
+        working: bool,
+        item: Item,
+        item_entity: Entity,
+        timer: Timer,
+    },
+    Done {
+        item: Item,
+        item_entity: Entity,
+    },
 }
 
 #[derive(Component, Reflect, Default)]
@@ -110,63 +111,85 @@ fn mortar_interaction(
         ..
     }) = messages.read().next()
         && let Ok(mut mortar) = mortars.get_mut(*entity)
-        && !mortar.working
-        && (inventory.item.is_some() || mortar.item.is_some())
     {
-        if let Some(item_entity) = mortar.item_entity.take() {
-            commands.entity(item_entity).despawn();
-        }
-        std::mem::swap(&mut inventory.item, &mut mortar.item);
-        if let Some(item) = mortar.item {
-            mortar.working = true;
-            let scene = item.scene(&asset_server, Vec3::new(0., 0.2, 0.));
-            let item_entity = commands
-                .spawn_scene(bsn! {
-                    #MortarItem
-                    ChildOf({*entity})
-                    @scene
-                })
-                .id();
-            mortar.item_entity = Some(item_entity);
+        match (&mortar.state, inventory.item) {
+            (MortarState::Idle, Some(item)) => {
+                let scene = item.scene(&asset_server, Vec3::new(0., 0.2, 0.));
+                let item_entity = commands
+                    .spawn_scene(bsn! {
+                        #MortarItem
+                        ChildOf({*entity})
+                        @scene
+                    })
+                    .id();
+                mortar.state = MortarState::Processing {
+                    working: true,
+                    item,
+                    item_entity,
+                    timer: Timer::new(Duration::from_millis(2000), TimerMode::Once),
+                };
+                mortar.set_animation = true;
+            }
+            (MortarState::Processing { .. }, _) => {
+                mortar.set_animation = true;
+            }
+            (MortarState::Done { item, item_entity }, None) => {
+                commands.entity(*item_entity).despawn();
+                inventory.item = Some(*item);
+                mortar.state = MortarState::Idle;
+                mortar.set_animation = true;
+            }
+            _ => {}
         }
     }
 }
 
 fn update_mortar(
+    focus: Res<PlayerFocus>,
+    input: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
-    mortars: Query<(&ArmatureHandle, &mut MortarStation)>,
+    mortars: Query<(Entity, &ArmatureHandle, &mut MortarStation)>,
     mut mortar_armatures: Query<(
         &mut AnimationPlayer,
         &mut AnimationTransitions,
         &MortarAnimations,
     )>,
 ) {
-    for (ArmatureHandle(entity), mut mortar) in mortars {
-        mortar.timer.tick(time.delta());
-        if mortar.timer.just_finished() {
-            mortar.working = false;
-            if let Ok((mut animation_player, mut transitions, animations)) =
-                mortar_armatures.get_mut(*entity)
-            {
-                transitions.play(
-                    &mut animation_player,
-                    animations.idle,
-                    Duration::from_millis(100),
-                );
-            }
-        } else if mortar.timer.is_finished()
-            && mortar.working
-            && let Ok((mut animation_player, mut transitions, armature)) =
-                mortar_armatures.get_mut(*entity)
+    for (entity, ArmatureHandle(armature_entity), mut mortar) in mortars {
+        if mortar.set_animation
+            && let Ok((mut animation_player, mut transitions, animations)) =
+                mortar_armatures.get_mut(*armature_entity)
         {
-            mortar.timer.reset();
+            mortar.set_animation = false;
+            let animation = match mortar.state {
+                MortarState::Processing { working: true, .. } => animations.pestle,
+                _ => animations.idle,
+            };
             transitions
-                .play(
-                    &mut animation_player,
-                    armature.pestle,
-                    Duration::from_millis(100),
-                )
+                .play(&mut animation_player, animation, Duration::from_millis(100))
                 .repeat();
+        }
+        match &mut mortar.state {
+            MortarState::Idle => {}
+            MortarState::Processing {
+                working,
+                item,
+                item_entity,
+                timer,
+            } if *working => {
+                if input.pressed(MouseButton::Right)
+                    && focus.interactable == Some((entity, Interactable::Mortar))
+                {
+                    timer.tick(time.delta());
+                    if !timer.just_finished() {
+                        continue;
+                    }
+                }
+                *working = false;
+                mortar.set_animation = true;
+            }
+            MortarState::Processing { .. } => {}
+            MortarState::Done { .. } => {}
         }
     }
 }

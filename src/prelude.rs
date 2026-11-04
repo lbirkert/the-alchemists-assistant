@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 
 pub use crate::game_layer::GameLayer;
-pub use crate::interaction::{Interactable, PlayerInteraction};
+pub use crate::interaction::{Interactable, PlayerFocus, PlayerInteraction};
 pub use crate::inventory::Inventory;
 pub use crate::item::{Item, ItemsDiscardable, ItemsPlaceable};
 pub use crate::player::PlayerCursor;

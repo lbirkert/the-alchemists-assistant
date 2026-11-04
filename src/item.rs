@@ -32,7 +32,7 @@ impl ItemsSource {
 // we might want to use https://github.com/FraserLee/bevy_sprite3d/blob/main/examples/sprite.rs
 // for rendering the items. -> Ask faervan
 
-#[derive(Component, Reflect, Debug, Clone, Copy)]
+#[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq)]
 #[reflect(Component)]
 pub enum Item {
     Garlic,
