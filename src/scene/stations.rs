@@ -115,7 +115,7 @@ impl ProcessingStation {
 }
 
 impl Station {
-    fn process_item(&self, item: Item) -> Item {
+    pub fn process_item(&self, item: Item) -> Item {
         match item {
             Item::Garlic => Item::Crystal,
             Item::Crystal => Item::Flowers,

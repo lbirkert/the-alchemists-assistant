@@ -160,7 +160,9 @@ fn update_hud_text(
                             "[RMB] Cannot {} {item:?} while holding {in_hand:?}",
                             station.base_verb(false)
                         ),
-                        (StationState::Done { item, .. }, None) => format!("[RMB] Take {item:?}"),
+                        (StationState::Done { item, .. }, None) => {
+                            format!("[RMB] Take {:?}", station.kind.process_item(*item))
+                        }
                         _ => String::new(),
                     }
                 } else {
