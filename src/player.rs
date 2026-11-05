@@ -194,10 +194,7 @@ fn player_move(
     direction = Quat::from_rotation_y(yaw) * direction;
 
     let accel = direction * settings.speed * speed_modifier * 30.0;
-
-    let total_accel = accel;
-
-    forces.apply_linear_acceleration(Vec3::new(total_accel.x, 0.0, total_accel.z));
+    forces.apply_linear_acceleration(Vec3::new(accel.x, 0.0, accel.z));
 }
 
 /// Handles looking around if cursor is locked
