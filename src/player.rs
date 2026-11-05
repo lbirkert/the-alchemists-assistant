@@ -21,9 +21,10 @@ pub(super) fn plugin(app: &mut App) {
             update_player_item_preview,
             fix_fall_to_void,
             player_look.before(player_move),
-            player_move.in_set(PhysicsSystems::First),
         ),
     );
+
+    app.add_systems(FixedUpdate, (apply_linear_damping, player_move).chain());
 }
 
 const PLAYER_SPAWN_POS: Vec3 = Vec3::new(2., 2., 0.);
@@ -55,6 +56,7 @@ fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) 
         Transform {
             translation: PLAYER_SPAWN_POS
         }
+        TransformInterpolation
         Visibility::Inherited
         RigidBody::Dynamic
         Collider::capsule(0.4, 1.8)
@@ -138,6 +140,12 @@ fn update_pointer_pos(
     }
 }
 
+fn apply_linear_damping(mut forces: Single<Forces, With<Player>>) {
+    let velocity = forces.linear_velocity();
+    let drag_accel = -velocity * 25.0;
+    forces.apply_linear_acceleration(Vec3::new(drag_accel.x, 0.0, drag_accel.z));
+}
+
 /// Handles keyboard input and movement
 fn player_move(
     mut commands: Commands,
@@ -185,10 +193,9 @@ fn player_move(
     direction.x *= settings.lr_speed_modifier;
     direction = Quat::from_rotation_y(yaw) * direction;
 
-    let drag_accel = -velocity * 18.0;
-    let accel = direction * settings.speed * speed_modifier * 25.0;
+    let accel = direction * settings.speed * speed_modifier * 30.0;
 
-    let total_accel = accel + drag_accel;
+    let total_accel = accel;
 
     forces.apply_linear_acceleration(Vec3::new(total_accel.x, 0.0, total_accel.z));
 }
