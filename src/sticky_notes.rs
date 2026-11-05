@@ -249,8 +249,7 @@ fn set_sticky_note_texture(
                     children![(
                         Text::new(note.text.clone()),
                         TextFont {
-                            font_size: FontSize::Px(28.0),
-                            weight: FontWeight(900),
+                            font_size: FontSize::Px(26.0),
                             font: FontSource::Handle(font),
                             ..default()
                         },
