@@ -20,10 +20,6 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnExit(MainMenuOpen(true)), |mut commands: Commands| {
         commands.remove_resource::<FocusableItems>();
     });
-    app.add_systems(
-        GameUpdate,
-        set_state_title.run_if(input_just_pressed(KeyCode::KeyM)),
-    );
 }
 
 fn setup(mut commands: Commands) {
@@ -73,8 +69,4 @@ fn setup(mut commands: Commands) {
     commands.entity(title).add_children(&focusable.items);
 
     commands.insert_resource(focusable);
-}
-
-fn set_state_title(mut next_state: ResMut<NextState<GameState>>) {
-    next_state.set(GameState::Title);
 }
