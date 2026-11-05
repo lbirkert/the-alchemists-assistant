@@ -138,9 +138,9 @@ impl Item {
         let asset = match self {
             Item::Garlic { state, .. } => match state {
                 ItemState::Unprocessed => "Garlic.glb",
-                ItemState::Sliced => "GarlicSliced.glb",
-                ItemState::MortaredCoarse => "GarlicMortaredCoarse.glb",
-                ItemState::MortaredFine => "GarlicMortaredFine.glb",
+                ItemState::Sliced => "SlicedGarlic.glb",
+                ItemState::MortaredCoarse => "GrindedGarlic.glb",
+                ItemState::MortaredFine => "FineGrindedGarlic.glb",
             },
             Item::Grass { .. } => "Grass.glb",
             Item::Flowers { .. } => "Flowers.glb",
