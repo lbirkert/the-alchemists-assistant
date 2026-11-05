@@ -172,7 +172,7 @@ fn update_hud_text(
                             station.base_verb(false)
                         ),
                         (StationState::Done { item, .. }, None) => {
-                            format!("[RMB] Take {}", station.kind.process_item(*item))
+                            format!("[RMB] Take {}", station.kind.process_item(item.clone()))
                         }
                         _ => String::new(),
                     }

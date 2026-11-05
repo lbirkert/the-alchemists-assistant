@@ -57,7 +57,7 @@ fn pickup_item_from_source(
         return;
     }
 
-    inventory.selection = Some(Selection::Item(*source));
+    inventory.selection = Some(Selection::Item(source.clone()));
 }
 
 fn pickup_item(
@@ -81,11 +81,8 @@ fn pickup_item(
     }
 
     if let Ok(item_transform) = transforms.get(*entity) {
-        let old_item = inventory.selection.replace(Selection::Item(*item));
+        let old_item = inventory.selection.replace(Selection::Item(item.clone()));
         if let Some(Selection::Item(old_item)) = old_item {
-            let item_scene =
-                old_item.physics_scene(&assets_server, item_transform.translation, Vec3::ZERO);
-            commands.spawn_scene(item_scene);
             let item_scene =
                 old_item.physics_scene(&assets_server, item_transform.translation, Vec3::ZERO);
             commands.spawn_scene(item_scene);

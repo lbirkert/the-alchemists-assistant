@@ -21,7 +21,7 @@ pub struct ItemSource {
 
 impl ItemSource {
     fn on_add(mut world: DeferredWorld, ctx: HookContext) {
-        let item = world.get::<Self>(ctx.entity).unwrap().item;
+        let item = world.get::<Self>(ctx.entity).unwrap().item.clone();
         world
             .commands()
             .entity(ctx.entity)
@@ -32,12 +32,17 @@ impl ItemSource {
 // we might want to use https://github.com/FraserLee/bevy_sprite3d/blob/main/examples/sprite.rs
 // for rendering the items. -> Ask faervan
 
-#[derive(Component, Reflect, Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Component, Reflect, Debug, Default, Clone, PartialEq, Eq, Hash)]
 #[reflect(Component)]
+#[reflect(Default)]
 pub struct Item {
     pub kind: ItemKind,
     pub state: ItemState,
     pub is_washed: bool,
+    pub potion: Option<Potion>,
+    // ^ don't like this tbh
+    // we probably want to have a unspecific ItemKind and then a
+    // different enum Item which contains the variants with data.
 }
 
 #[derive(Component, Reflect, EnumIter, Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
@@ -48,6 +53,7 @@ pub enum ItemKind {
     Crystal,
     Grass,
     Flowers,
+    Potion,
 }
 
 #[derive(Reflect, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -69,6 +75,7 @@ impl std::fmt::Display for ItemKind {
                 Self::Crystal => "Crystal",
                 Self::Grass => "Grass",
                 Self::Flowers => "Flowers",
+                Self::Potion => "Potion",
             }
         )
     }
@@ -104,6 +111,7 @@ impl Item {
             },
             ItemKind::Grass => "Grass.glb",
             ItemKind::Flowers => "Flowers.glb",
+            ItemKind::Potion => "Potion.glb",
             ItemKind::Crystal => match self.state {
                 ItemState::Unprocessed => "Crystal.glb",
                 ItemState::Grinded => "GrindedCrystal.glb",
@@ -122,13 +130,14 @@ impl Item {
     }
 
     pub fn physics_scene(self, asset_server: &AssetServer, pos: Vec3, vel: Vec3) -> impl Scene {
-        let scene = self.scene(asset_server, pos);
+        let scene = self.clone().scene(asset_server, pos);
         bsn! {
             RigidBody::Dynamic
             LinearVelocity(vel)
             Collider::cuboid(1.0, 1.0, 1.0)
             @scene
-            Interactable::Item({self})
+            Interactable::Item({self.clone()})
+            self
         }
     }
 

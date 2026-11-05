@@ -5,7 +5,7 @@ use bevy::{
 use crate::{prelude::*, utils};
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(GameUpdate, set_sticky_note_texture);
+    app.add_systems(GamePostUpdate, set_sticky_note_texture);
     app.add_systems(GameUpdate, pickup_sticky_note);
     app.add_systems(GameUpdate, place_sticky_note);
 }
@@ -54,7 +54,7 @@ impl NoteMaterial {
     }
 }
 
-#[derive(Component, Reflect, Default, Debug, Clone, Eq, PartialEq)]
+#[derive(Component, Reflect, Default, Debug, Clone, Eq, PartialEq, Hash)]
 #[reflect(Component)]
 #[reflect(Default)]
 #[component(on_add)]

@@ -10,6 +10,7 @@ mod item;
 mod manager;
 mod npc;
 mod player;
+mod potion;
 mod prelude;
 mod recipe;
 mod scene;
@@ -57,6 +58,7 @@ pub fn main() -> AppExit {
         drawer::plugin,
         upgrades::plugin,
         sticky_note::plugin,
+        potion::plugin,
     ));
     app.add_plugins((manager::plugin, npc::plugin));
 
