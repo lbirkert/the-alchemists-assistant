@@ -1,8 +1,6 @@
 use std::time::Duration;
 
-use bevy::audio::Volume;
-
-use crate::prelude::*;
+use crate::{prelude::*, sounds::audio_scene};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(GameUpdate, play_movement_sound);
@@ -30,22 +28,8 @@ fn play_movement_sound(
     for (entity, mut moving) in moving {
         moving.timer.tick(time.delta());
         if moving.timer.is_finished() {
-            commands.spawn_scene(audio_scene(entity));
+            commands.spawn_scene(audio_scene(entity, &AUDIO_SOURCES));
         }
-    }
-}
-
-fn audio_scene(parent: Entity) -> impl Scene {
-    let mut rng = rand::rng();
-    let source = *AUDIO_SOURCES
-        .choose(&mut rng)
-        .expect("the slice is not empty");
-    bsn! {
-        #MovementSound
-        Transform
-        ChildOf(parent)
-        AudioPlayer(source)
-        PlaybackSettings::DESPAWN.with_spatial(true).with_volume(Volume::Linear(0.5))
     }
 }
 
