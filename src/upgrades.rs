@@ -1,5 +1,5 @@
 use crate::{
-    item::ItemsSource,
+    item::ItemSource,
     prelude::*,
     scene::stations::{ProcessingStation, Station},
 };
@@ -91,12 +91,18 @@ impl Default for GameUpgrades {
                 (
                     item,
                     match item {
-                        Item::Garlic => UpgradeState::UnlockedByDefault,
-                        Item::Flowers => UpgradeState::UnlockedByDefault,
-                        Item::Grass => UpgradeState::Locked {
-                            requirements: vec![UnlockCondition::item(Item::Flowers, 3)],
+                        Item::Garlic { .. } => UpgradeState::UnlockedByDefault,
+                        Item::Flowers { .. } => UpgradeState::UnlockedByDefault,
+                        Item::Grass { .. } => UpgradeState::Locked {
+                            requirements: vec![UnlockCondition::item(
+                                Item::Flowers {
+                                    state: Default::default(),
+                                    is_washed: Default::default(),
+                                },
+                                3,
+                            )],
                         },
-                        Item::Crystal => UpgradeState::Locked {
+                        Item::Crystal { .. } => UpgradeState::Locked {
                             requirements: vec![UnlockCondition::TotalItemsProcessed(10)],
                         },
                     },
@@ -132,10 +138,7 @@ impl GameUpgrades {
 
 fn hide_locked_things(
     upgrades: Res<GameUpgrades>,
-    sources: Query<
-        (&ItemsSource, &mut Visibility),
-        (Added<ItemsSource>, Without<ProcessingStation>),
-    >,
+    sources: Query<(&ItemSource, &mut Visibility), (Added<ItemSource>, Without<ProcessingStation>)>,
     stations: Query<(&ProcessingStation, &mut Visibility), Added<ProcessingStation>>,
 ) {
     for (source, mut visibility) in sources {
@@ -154,7 +157,7 @@ fn check_upgrade_requirements(
     statistics: Res<Statistics>,
     mut upgrades: ResMut<GameUpgrades>,
     mut unlock_messages: MessageWriter<NewUnlock>,
-    sources: Query<(&ItemsSource, &mut Visibility), Without<ProcessingStation>>,
+    sources: Query<(&ItemSource, &mut Visibility), Without<ProcessingStation>>,
     stations: Query<(&ProcessingStation, &mut Visibility)>,
 ) {
     for (item, state) in &mut upgrades.items {

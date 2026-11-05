@@ -116,11 +116,42 @@ impl ProcessingStation {
 
 impl Station {
     pub fn process_item(&self, item: Item) -> Item {
+        match self {
+            Station::Mortar => self.pestle_item(item),
+            Station::CuttingBoard => self.cut_item(item),
+        }
+    }
+
+    fn pestle_item(&self, item: Item) -> Item {
         match item {
-            Item::Garlic => Item::Crystal,
-            Item::Crystal => Item::Flowers,
-            Item::Flowers => Item::Grass,
-            Item::Grass => Item::Garlic,
+            Item::Garlic {
+                state: ItemState::Unprocessed,
+                is_washed,
+            } => Item::Garlic {
+                state: ItemState::Grinded,
+                is_washed,
+            },
+            Item::Garlic {
+                state: ItemState::Sliced | ItemState::Grinded,
+                is_washed,
+            } => Item::Garlic {
+                state: ItemState::FineGrinded,
+                is_washed,
+            },
+            _ => item,
+        }
+    }
+
+    fn cut_item(&self, item: Item) -> Item {
+        match item {
+            Item::Garlic {
+                state: ItemState::Unprocessed,
+                is_washed,
+            } => Item::Garlic {
+                state: ItemState::Sliced,
+                is_washed,
+            },
+            _ => item,
         }
     }
 }
@@ -176,8 +207,8 @@ fn station_interaction(
     }) = messages.read().next()
         && let Ok(mut station) = stations.get_mut(*entity)
     {
-        match (&station.state, inventory.item) {
-            (StationState::Idle, Some(item)) => {
+        match (&station.state, inventory.selection.as_ref()) {
+            (StationState::Idle, Some(Selection::Item(item))) => {
                 let scene = item.scene(&asset_server, Vec3::new(0., 0.2, 0.));
                 let item_entity = commands
                     .spawn_scene(bsn! {
@@ -189,19 +220,19 @@ fn station_interaction(
                 station.state = StationState::Processing {
                     working: true,
                     transformed: false,
-                    item,
+                    item: *item,
                     item_entity,
                     timer: Timer::new(Duration::from_millis(2000), TimerMode::Once),
                 };
                 station.set_animation = true;
-                inventory.item = None;
+                inventory.selection = None;
             }
             (StationState::Processing { .. }, _) => {
                 station.set_animation = true;
             }
             (StationState::Done { item, item_entity }, None) => {
                 commands.entity(*item_entity).despawn();
-                inventory.item = Some(station.kind.process_item(*item));
+                inventory.selection = Some(Selection::Item(station.kind.process_item(*item)));
                 station.state = StationState::Idle;
                 station.set_animation = true;
             }

@@ -114,27 +114,40 @@ fn update_hud_text(
     mortars: Query<&ProcessingStation>,
     mut text: Single<&mut Text, With<HudText>>,
 ) {
-    let value = if let Some((entity, interactable)) = focus.interactable {
-        match (interactable, inventory.item) {
+    let value = if let Some((entity, ref interactable)) = focus.interactable {
+        match (interactable, inventory.selection.as_ref()) {
             (Interactable::Item(item), Some(in_hand)) => {
-                format!("[RMB] Swap {item:?} with {in_hand:?}")
+                format!("[RMB] Swap {item} with {in_hand}")
             }
             (Interactable::Item(item) | Interactable::Source { item }, None) => {
-                format!("[RMB] Pick up {item:?}")
+                format!("[RMB] Pick up {item}")
             }
-            (Interactable::PlaceableLocation, Some(in_hand)) => format!("[RMB] Place {in_hand:?}"),
-            (Interactable::Discardable, Some(in_hand)) => format!("[RMB] Discard {in_hand:?}"),
-            (Interactable::Source { .. }, Some(in_hand)) => format!("Already holding {in_hand:?}"),
+            (Interactable::ItemPlaceable, Some(Selection::Item(in_hand))) => {
+                format!("[RMB] Place {in_hand}")
+            }
+            (Interactable::StickyNotePlaceable, Some(Selection::StickyNote(_))) => {
+                String::from("[RMB] Place Sticky Note")
+            }
+            (Interactable::ItemDiscardable, Some(in_hand)) => format!("[RMB] Discard {in_hand}"),
+            (Interactable::Source { .. }, Some(in_hand)) => format!("Already holding {in_hand}"),
+            (
+                Interactable::ItemPlaceable
+                | Interactable::StickyNotePlaceable
+                | Interactable::ItemDiscardable,
+                None,
+            ) => String::new(),
             (Interactable::Drawer, _) => String::from(match drawers.get(entity) {
                 Ok(Drawer { opened: true, .. }) => "[RMB] Close drawer",
                 Ok(Drawer { opened: false, .. }) => "[RMB] Open drawer",
                 Err(_) => "",
             }),
+            (Interactable::StickyNote(_), None) => String::from("[RMB] Pick up Sticky Note"),
+            (Interactable::StickyNote(_), Some(in_hand)) => format!("Already holding {in_hand}"),
             (Interactable::Station, _) => {
                 if let Ok(station) = mortars.get(entity) {
-                    match (&station.state, inventory.item) {
-                        (StationState::Idle, Some(in_hand)) => {
-                            format!("[RMB] {} {in_hand:?}", station.base_verb(true))
+                    match (&station.state, inventory.selection.as_ref()) {
+                        (StationState::Idle, Some(Selection::Item(in_hand))) => {
+                            format!("[RMB] {} {in_hand}", station.base_verb(true))
                         }
                         (
                             StationState::Processing {
@@ -143,7 +156,7 @@ fn update_hud_text(
                                 ..
                             },
                             None,
-                        ) => format!("[RMB] Continue {} {item:?}", station.ing_verb()),
+                        ) => format!("[RMB] Continue {} {item}", station.ing_verb()),
                         (
                             StationState::Processing {
                                 working: false,
@@ -152,11 +165,11 @@ fn update_hud_text(
                             },
                             Some(in_hand),
                         ) => format!(
-                            "[RMB] Cannot {} {item:?} while holding {in_hand:?}",
+                            "[RMB] Cannot {} {item} while holding {in_hand}",
                             station.base_verb(false)
                         ),
                         (StationState::Done { item, .. }, None) => {
-                            format!("[RMB] Take {:?}", station.kind.process_item(*item))
+                            format!("[RMB] Take {}", station.kind.process_item(*item))
                         }
                         _ => String::new(),
                     }
@@ -164,7 +177,7 @@ fn update_hud_text(
                     String::new()
                 }
             }
-            (Interactable::PlaceableLocation | Interactable::Discardable, None) => String::new(),
+            _ => String::new(),
         }
     } else {
         String::new()

@@ -2,15 +2,17 @@
 
 pub use crate::game_layer::GameLayer;
 pub use crate::interaction::{Interactable, PlayerFocus, PlayerInteraction};
-pub use crate::inventory::Inventory;
-pub use crate::item::{Item, ItemsDiscardable, ItemsPlaceable};
+pub use crate::inventory::{Inventory, Selection};
+pub use crate::item::{Item, ItemDiscardable, ItemPlaceable, ItemState};
 pub use crate::player::PlayerCursor;
+pub use crate::recipe::Recipe;
 pub use crate::scene::EnvironmentObject;
 pub use crate::settings::KeyBindings;
 pub use crate::state::{
     GamePaused, GamePostUpdate, GameState, GameUpdate, MainMenuOpen, ON_GAME_ENTER, ON_GAME_EXIT,
     SettingsOpen, TitleScreenPostUpdate, TitleScreenUpdate,
 };
+pub use crate::sticky_note::StickyNote;
 pub use crate::upgrades::Statistics;
 
 pub use std::collections::VecDeque;

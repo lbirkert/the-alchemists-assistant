@@ -9,10 +9,12 @@ mod inventory;
 mod item;
 mod player;
 mod prelude;
+mod recipe;
 mod scene;
 mod settings;
 mod sounds;
 mod state;
+mod sticky_note;
 mod ui;
 mod upgrades;
 mod utils;
@@ -52,6 +54,7 @@ pub fn main() -> AppExit {
         inventory::plugin,
         drawer::plugin,
         upgrades::plugin,
+        sticky_note::plugin,
     ));
 
     app.run()
