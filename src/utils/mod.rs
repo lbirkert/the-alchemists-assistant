@@ -25,7 +25,7 @@ fn remove_meshes(
     }
 }
 
-pub fn find<C: Component>(
+pub fn find_parent<C: Component>(
     mut entity: Entity,
     query: &Query<(Option<&ChildOf>, Has<C>)>,
 ) -> Option<Entity> {

@@ -56,7 +56,7 @@ impl NoteMaterial {
     }
 }
 
-#[derive(Component, Reflect, Default, Debug, Clone)]
+#[derive(Component, Reflect, Default, Debug, Clone, Eq, PartialEq)]
 #[reflect(Component)]
 #[reflect(Default)]
 #[component(on_add)]
@@ -199,8 +199,8 @@ fn set_sticky_note_texture(
             return;
         }
 
-        let mut sticky_note =
-            utils::find::<StickyNote>(entity, &query).and_then(|e| sticky_notes.get_mut(e).ok());
+        let mut sticky_note = utils::find_parent::<StickyNote>(entity, &query)
+            .and_then(|e| sticky_notes.get_mut(e).ok());
 
         let Some(ref mut note) = sticky_note else {
             return;

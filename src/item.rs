@@ -32,9 +32,8 @@ impl ItemSource {
 // we might want to use https://github.com/FraserLee/bevy_sprite3d/blob/main/examples/sprite.rs
 // for rendering the items. -> Ask faervan
 
-#[derive(Component, Reflect, Debug, Clone, Copy)]
+#[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq)]
 #[reflect(Component)]
-#[component(on_add)]
 pub enum Item {
     Garlic { state: ItemState, is_washed: bool },
     Crystal { state: ItemState, is_washed: bool },
@@ -42,19 +41,12 @@ pub enum Item {
     Flowers { state: ItemState, is_washed: bool },
 }
 
-#[derive(Reflect, Debug, Clone, Copy)]
+#[derive(Reflect, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ItemState {
     Unprocessed,
     Sliced,
     MortaredCoarse,
     MortaredFine,
-}
-
-#[derive(Reflect, Debug, Clone, Copy)]
-pub enum MortarState {
-    None,
-    Coarse,
-    Fine,
 }
 
 impl std::fmt::Display for Item {
@@ -171,6 +163,7 @@ impl Item {
             LinearVelocity(vel)
             Collider::cuboid(1.0, 1.0, 1.0)
             @scene
+            Interactable::Item({self})
         }
     }
 }

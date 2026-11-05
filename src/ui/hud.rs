@@ -1,4 +1,8 @@
-use crate::{drawer::Drawer, prelude::*, scene::stations::MortarStation};
+use crate::{
+    drawer::Drawer,
+    prelude::*,
+    scene::stations::{MortarState, MortarStation},
+};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GamePaused(false)), setup);
@@ -9,26 +13,59 @@ pub(super) fn plugin(app: &mut App) {
 #[reflect(Component)]
 struct HudText;
 
+const CROSSHAIR_SIZE: f32 = 20.;
+const CROSSHAIR_THICKNESS: f32 = 2.;
+
 fn setup(mut commands: Commands) {
     commands.spawn_scene(bsn! {
         #GameHud
         Node {
             width: percent(100),
             height: percent(100),
-            flex_direction: FlexDirection::Column,
-            row_gap: px(5),
-            align_items: AlignItems::End,
-            justify_content: JustifyContent::End,
-            padding: UiRect {
-                right: px(20),
-                bottom: px(10)
-            }
         }
         Pickable::IGNORE
         DespawnOnExit::<GamePaused>(GamePaused(false))
         Children [
             HudText
+            Node {
+                position_type: PositionType::Absolute,
+                right: px(20),
+                bottom: px(10),
+            }
             Text::new("")
+            --
+            #CrossHair
+            Node {
+                width: px(CROSSHAIR_SIZE),
+                height: px(CROSSHAIR_SIZE),
+                top: percent(50),
+                left: percent(50),
+                margin: UiRect {
+                    top: px(-CROSSHAIR_SIZE / 2.),
+                    left: px(-CROSSHAIR_SIZE / 2.),
+                },
+                position_type: PositionType::Absolute,
+            }
+            Pickable::IGNORE
+            Children [
+                Node {
+                    width: percent(100),
+                    height: px(CROSSHAIR_THICKNESS),
+                    top: px(CROSSHAIR_SIZE / 2. - CROSSHAIR_THICKNESS / 2.),
+                    position_type: PositionType::Absolute,
+                }
+                BackgroundColor(Color::WHITE)
+                Pickable::IGNORE
+                --
+                Node {
+                    width: px(CROSSHAIR_THICKNESS),
+                    height: percent(100),
+                    left: px(CROSSHAIR_SIZE / 2. - CROSSHAIR_THICKNESS / 2.),
+                    position_type: PositionType::Absolute,
+                }
+                BackgroundColor(Color::WHITE)
+                Pickable::IGNORE
+            ]
         ]
     });
 }
@@ -43,7 +80,7 @@ fn update_hud_text(
     mut text: Single<&mut Text, With<HudText>>,
 ) {
     let value = if let Some((mesh_entity, _hit)) = pointer.get_nearest_hit()
-        && let Some(entity) = crate::utils::find(*mesh_entity, &interactable_search)
+        && let Some(entity) = crate::utils::find_parent(*mesh_entity, &interactable_search)
         && let Ok(interactable) = interactables.get(entity)
     {
         match (interactable, inventory.selection.as_ref()) {
@@ -53,8 +90,11 @@ fn update_hud_text(
             (Interactable::Item(item) | Interactable::Source { item }, None) => {
                 format!("[RMB] pick up {item}")
             }
-            (Interactable::ItemPlaceable | Interactable::StickyNotePlaceable, Some(in_hand)) => {
+            (Interactable::ItemPlaceable, Some(Selection::Item(in_hand))) => {
                 format!("[RMB] place {in_hand}")
+            }
+            (Interactable::StickyNotePlaceable, Some(Selection::StickyNote(_))) => {
+                format!("[RMB] place Sticky Note")
             }
             (Interactable::ItemDiscardable, Some(in_hand)) => format!("[RMB] discard {in_hand}"),
             (Interactable::Source { .. }, Some(in_hand)) => format!("Already holding {in_hand}"),
@@ -71,14 +111,36 @@ fn update_hud_text(
             }),
             (Interactable::StickyNote(_), None) => format!("[RMB] pick up Sticky Note"),
             (Interactable::StickyNote(_), Some(in_hand)) => format!("Already holding {in_hand}"),
-            (Interactable::Mortar, Some(in_hand)) => match mortars.get(entity) {
-                Ok(MortarStation { working: false }) => format!("[RMB] grind {in_hand:?}"),
-                Ok(MortarStation { working: true }) | Err(_) => String::new(),
-            },
-            (
-                Interactable::ItemPlaceable | Interactable::ItemDiscardable | Interactable::Mortar,
-                None,
-            ) => String::new(),
+            (Interactable::Mortar, _) => {
+                if let Ok(mortar) = mortars.get(entity) {
+                    match (&mortar.state, inventory.selection.as_ref()) {
+                        (MortarState::Idle, Some(Selection::Item(in_hand))) => {
+                            format!("[RMB] pestle {in_hand}")
+                        }
+                        (
+                            MortarState::Processing {
+                                working: false,
+                                item,
+                                ..
+                            },
+                            None,
+                        ) => format!("[RMB] continue pestling {item:?}"),
+                        (
+                            MortarState::Processing {
+                                working: false,
+                                item,
+                                ..
+                            },
+                            Some(in_hand),
+                        ) => format!("[RMB] cannot pestle {item} while holding {in_hand}"),
+                        (MortarState::Done { item, .. }, None) => format!("[RMB] take {item}"),
+                        _ => String::new(),
+                    }
+                } else {
+                    String::new()
+                }
+            }
+            _ => String::new(),
         }
     } else {
         String::new()
