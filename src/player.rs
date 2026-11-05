@@ -233,7 +233,11 @@ fn update_player_item_preview(
             });
         }
         Some(Selection::StickyNote(sticky_note)) => {
-            let scene = sticky_note.scene(&asset_server, Vec3::ZERO, Vec3::Z);
+            let scene = sticky_note.scene(
+                &asset_server,
+                Vec3::ZERO,
+                Quat::from_rotation_y(std::f32::consts::PI),
+            );
             commands.entity(*right_hand).apply_scene(bsn! {
                 Children [
                 @scene

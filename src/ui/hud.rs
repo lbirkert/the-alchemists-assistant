@@ -111,6 +111,7 @@ fn update_hud_text(
             }),
             (Interactable::StickyNote(_), None) => format!("[RMB] pick up Sticky Note"),
             (Interactable::StickyNote(_), Some(in_hand)) => format!("Already holding {in_hand}"),
+            (Interactable::Bell, _) => format!("[RMB] call alchemist"),
             (Interactable::Mortar, _) => {
                 if let Ok(mortar) = mortars.get(entity) {
                     match (&mortar.state, inventory.selection.as_ref()) {

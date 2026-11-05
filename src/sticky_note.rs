@@ -61,7 +61,8 @@ impl NoteMaterial {
 #[reflect(Default)]
 #[component(on_add)]
 pub struct StickyNote {
-    text: String,
+    pub text: String,
+    pub recipe: Option<Recipe>,
 }
 
 impl StickyNote {
@@ -73,12 +74,12 @@ impl StickyNote {
             .insert(Interactable::StickyNote(this));
     }
 
-    pub fn scene(self, asset_server: &AssetServer, pos: Vec3, normal: Vec3) -> impl Scene {
+    pub fn scene(self, asset_server: &AssetServer, pos: Vec3, rot: Quat) -> impl Scene {
         let scene = asset_server.load("StickyNotes.glb#Scene0");
         bsn! {
             #StickyNote
             WorldAssetRoot(scene)
-            Transform::from_translation(pos).looking_to(normal, Vec3::Y)
+            Transform::from_translation(pos).with_rotation(rot)
             self
         }
     }
@@ -116,7 +117,7 @@ fn update_whiteboard(
     commands.entity(whiteboard).with_children(|parent| {
         parent.spawn((
             Name::new("StickyNote"),
-            StickyNote { text },
+            StickyNote { text, recipe: None },
             WorldAssetRoot(scene),
             Transform::from_xyz(-0.03, 0.0, 0.01).looking_to(Vec3::NEG_X, Vec3::Y),
         ));
@@ -179,7 +180,11 @@ fn place_sticky_note(
         return;
     };
 
-    let scene = sticky_note.scene(&asset_server, *position, *normal);
+    let scene = sticky_note.scene(
+        &asset_server,
+        *position,
+        Quat::from_rotation_arc(Vec3::Z, *normal),
+    );
     commands.spawn_scene(scene);
 }
 

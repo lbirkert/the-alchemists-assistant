@@ -1,6 +1,34 @@
 use crate::prelude::*;
 
-#[derive(Debug)]
+// a potion crafted by a user that might have a sticky note attached
+#[derive(Reflect, Clone, Debug)]
+pub struct Potion {
+    items: Vec<Item>,
+    // TODO: type: round, square, etc...
+    sticky_note: Option<StickyNote>,
+}
+
+impl Potion {
+    pub fn can_validate(&self) -> bool {
+        self.sticky_note
+            .as_ref()
+            .is_some_and(|s| s.recipe.is_some())
+    }
+
+    pub fn validate(&self) -> Option<bool> {
+        if let Some(StickyNote {
+            recipe: Some(ref recipe),
+            ..
+        }) = self.sticky_note
+        {
+            Some(self.items == recipe.items())
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Debug, Clone, Reflect, PartialEq, Eq)]
 pub struct Recipe {
     pub task_description: String,
     pub positive_result: String,
@@ -9,7 +37,7 @@ pub struct Recipe {
     pub stir_duration: i32, // do we need this?
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Reflect, PartialEq, Eq)]
 pub struct Ingredient {
     steps_description: String,
     item: Item,
@@ -170,6 +198,13 @@ impl Recipe {
         ingredients.push(Self::get_garlic_ingredients(&upgrades));
         ingredients.push(Self::get_flowers_ingredients(&upgrades));
         ingredients
+    }
+
+    pub fn items(&self) -> Vec<Item> {
+        self.ingredients
+            .iter()
+            .map(|i| i.item.clone())
+            .collect::<Vec<_>>()
     }
 
     pub fn generate() -> Self {

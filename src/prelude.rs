@@ -5,7 +5,7 @@ pub use crate::interaction::{Interactable, PlayerFocus, PlayerInteraction};
 pub use crate::inventory::{Inventory, Selection};
 pub use crate::item::{Item, ItemDiscardable, ItemPlaceable, ItemState};
 pub use crate::player::PlayerCursor;
-pub use crate::recipe::Recipe;
+pub use crate::recipe::{Potion, Recipe};
 pub use crate::scene::EnvironmentObject;
 pub use crate::settings::KeyBindings;
 pub use crate::state::{
@@ -24,6 +24,8 @@ pub use bevy::input::common_conditions::{input_just_pressed, input_toggle_active
 pub use bevy::picking::pointer::PointerInteraction;
 pub use bevy::prelude::*;
 pub use bevy::ui_widgets::Activate;
+
+pub use crate::manager::GameManager;
 
 pub use avian3d::prelude::*;
 

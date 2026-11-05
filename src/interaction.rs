@@ -31,6 +31,7 @@ pub enum Interactable {
     ItemPlaceable,
     StickyNotePlaceable,
     ItemDiscardable,
+    Bell,
     Source {
         item: Item,
     },
