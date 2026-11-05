@@ -4,22 +4,22 @@ pub const ITEM_SIZE: f32 = 0.3;
 
 #[derive(Component, Default, Reflect, Debug, Clone)]
 #[reflect(Component)]
-#[require(Interactable::PlaceableLocation)]
-pub struct ItemsPlaceable;
+#[require(Interactable::ItemPlaceable)]
+pub struct ItemPlaceable;
 
 #[derive(Component, Default, Reflect, Debug, Clone)]
 #[reflect(Component)]
-#[require(Interactable::Discardable)]
-pub struct ItemsDiscardable;
+#[require(Interactable::ItemDiscardable)]
+pub struct ItemDiscardable;
 
 #[derive(Component, Reflect, Debug, Clone)]
 #[reflect(Component)]
 #[component(on_add)]
-pub struct ItemsSource {
+pub struct ItemSource {
     pub item: Item,
 }
 
-impl ItemsSource {
+impl ItemSource {
     fn on_add(mut world: DeferredWorld, ctx: HookContext) {
         let item = world.get::<Self>(ctx.entity).unwrap().item;
         world

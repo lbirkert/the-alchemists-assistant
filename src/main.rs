@@ -4,6 +4,7 @@ mod camera;
 mod debug;
 mod drawer;
 mod game_layer;
+mod interaction;
 mod inventory;
 mod item;
 mod player;
@@ -13,7 +14,7 @@ mod scene;
 mod settings;
 mod sounds;
 mod state;
-mod sticky_notes;
+mod sticky_note;
 mod ui;
 mod utils;
 
@@ -48,9 +49,10 @@ pub fn main() -> AppExit {
         scene::plugin,
         sounds::plugin,
         player::plugin,
+        interaction::plugin,
         inventory::plugin,
         drawer::plugin,
-        sticky_notes::plugin,
+        sticky_note::plugin,
     ));
 
     app.run()

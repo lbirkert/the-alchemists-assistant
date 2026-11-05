@@ -5,6 +5,7 @@ use bevy::{
 use crate::{prelude::*, utils};
 
 pub fn plugin(app: &mut App) {
+    // TODO: proper day management system
     app.insert_resource(CurrentRecipes {
         recipes: Vec::new(),
     });
@@ -85,8 +86,8 @@ impl StickyNote {
 
 #[derive(Component, Reflect, Default, Clone)]
 #[reflect(Component)]
-#[require(Interactable::PlaceableLocation)]
-pub struct StickyNotesPlaceable;
+#[require(Interactable::StickyNotePlaceable)]
+pub struct StickyNotePlaceable;
 
 #[derive(Resource)]
 pub struct CurrentRecipes {
@@ -124,43 +125,47 @@ fn update_whiteboard(
 
 fn pickup_sticky_note(
     mut commands: Commands,
-    // assets_server: Res<AssetServer>,
-    input: Res<ButtonInput<MouseButton>>,
+    mut messages: MessageReader<PlayerInteraction>,
     mut inventory: Single<&mut Inventory>,
-    pointer: Single<&PointerInteraction, With<PlayerCursor>>,
-    query: Query<(Option<&ChildOf>, Has<StickyNote>)>,
-    note_query: Query<(&StickyNote, &Transform)>,
 ) {
-    if !input.just_pressed(MouseButton::Right) {
+    let Some(PlayerInteraction {
+        entity,
+        kind: Interactable::StickyNote(note),
+        ..
+    }) = messages.read().next()
+    else {
         return;
-    }
+    };
 
     if inventory.selection.is_some() {
         return;
     }
 
-    if let Some((mesh_entity, _hit)) = pointer.get_nearest_hit()
-        && let Some(entity) = crate::utils::find::<StickyNote>(*mesh_entity, &query)
-        && let Ok((note, _note_transform)) = note_query.get(entity)
-    {
-        inventory.selection = Some(Selection::StickyNote(note.clone()));
+    inventory.selection = Some(Selection::StickyNote(note.clone()));
 
-        // destroy old sticky note
-        commands.entity(entity).despawn();
-    }
+    // destroy old sticky note
+    commands.entity(*entity).despawn();
 }
 
 fn place_sticky_note(
     mut commands: Commands,
+    mut messages: MessageReader<PlayerInteraction>,
     asset_server: Res<AssetServer>,
-    input: Res<ButtonInput<MouseButton>>,
     mut inventory: Single<&mut Inventory>,
-    pointer: Single<&PointerInteraction, With<PlayerCursor>>,
-    locations: Query<&Transform, With<StickyNotesPlaceable>>,
 ) {
-    if !input.just_pressed(MouseButton::Right) {
+    let Some(PlayerInteraction {
+        kind: Interactable::StickyNotePlaceable,
+        hit:
+            HitData {
+                position: Some(position),
+                normal: Some(normal),
+                ..
+            },
+        ..
+    }) = messages.read().next()
+    else {
         return;
-    }
+    };
 
     if !inventory
         .selection
@@ -170,26 +175,12 @@ fn place_sticky_note(
         return;
     }
 
-    if let Some((
-        entity,
-        HitData {
-            position: Some(position),
-            normal: Some(normal),
-            ..
-        },
-    )) = pointer.get_nearest_hit()
-    {
-        if locations.get(*entity).is_err() {
-            return;
-        }
+    let Some(Selection::StickyNote(sticky_note)) = inventory.selection.take() else {
+        return;
+    };
 
-        let Some(Selection::StickyNote(sticky_note)) = inventory.selection.take() else {
-            return;
-        };
-
-        let scene = sticky_note.scene(&asset_server, *position, *normal);
-        commands.spawn_scene(scene);
-    }
+    let scene = sticky_note.scene(&asset_server, *position, *normal);
+    commands.spawn_scene(scene);
 }
 
 fn set_sticky_note_texture(
