@@ -7,6 +7,8 @@ mod game_layer;
 mod interaction;
 mod inventory;
 mod item;
+mod manager;
+mod npc;
 mod player;
 mod prelude;
 mod recipe;
@@ -56,6 +58,7 @@ pub fn main() -> AppExit {
         upgrades::plugin,
         sticky_note::plugin,
     ));
+    app.add_plugins((manager::plugin, npc::plugin));
 
     app.run()
 }

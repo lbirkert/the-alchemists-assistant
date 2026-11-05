@@ -46,13 +46,7 @@ fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) 
     let player_entity = commands.spawn_scene(bsn! {
         #Player
         Player
-        Inventory {
-            selection: Selection::Item(Item {
-                kind: ItemKind::Garlic,
-                is_washed: false,
-                state: ItemState::Unprocessed,
-            })
-        }
+        Inventory
         Transform {
             translation: PLAYER_SPAWN_POS
         }
@@ -248,7 +242,11 @@ fn update_player_item_preview(
             });
         }
         Some(Selection::StickyNote(sticky_note)) => {
-            let scene = sticky_note.scene(&asset_server, Vec3::ZERO, Vec3::Z);
+            let scene = sticky_note.scene(
+                &asset_server,
+                Vec3::ZERO,
+                Quat::from_rotation_y(std::f32::consts::PI),
+            );
             commands.entity(*right_hand).apply_scene(bsn! {
                 Children [
                 @scene

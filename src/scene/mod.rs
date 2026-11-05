@@ -71,6 +71,28 @@ struct CauldronLight;
 )]
 struct Tree;
 
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+#[require(Interactable::Bell)]
+pub struct NpcBell;
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct NpcStickyNotes;
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct NpcTable {
+    pub potions: Vec<(Entity, Potion)>,
+}
+
+impl NpcTable {
+    pub fn validatable_potion(&mut self) -> Option<(Entity, Potion)> {
+        let idx = self.potions.iter().position(|(_, p)| p.can_validate())?;
+        Some(self.potions.remove(idx))
+    }
+}
+
 fn spawn_scene(mut commands: Commands) {
     commands.spawn_scene(bsn! {
         #GameScene

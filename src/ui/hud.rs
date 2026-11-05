@@ -128,7 +128,9 @@ fn update_hud_text(
             (Interactable::StickyNotePlaceable, Some(Selection::StickyNote(_))) => {
                 String::from("[RMB] Place Sticky Note")
             }
-            (Interactable::ItemDiscardable, Some(in_hand)) => format!("[RMB] Discard {in_hand}"),
+            (Interactable::ItemDiscardable, Some(Selection::Item(in_hand))) => {
+                format!("[RMB] Discard {in_hand}")
+            }
             (Interactable::Source { .. }, Some(in_hand)) => format!("Already holding {in_hand}"),
             (
                 Interactable::ItemPlaceable
@@ -143,6 +145,7 @@ fn update_hud_text(
             }),
             (Interactable::StickyNote(_), None) => String::from("[RMB] Pick up Sticky Note"),
             (Interactable::StickyNote(_), Some(in_hand)) => format!("Already holding {in_hand}"),
+            (Interactable::Bell, _) => format!("[RMB] call alchemist"),
             (Interactable::Station, _) => {
                 if let Ok(station) = mortars.get(entity) {
                     match (&station.state, inventory.selection.as_ref()) {
