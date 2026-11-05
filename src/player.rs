@@ -46,7 +46,8 @@ fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) 
         #Player
         Player
         Inventory {
-            selection: Selection::Item(Item::Garlic {
+            selection: Selection::Item(Item {
+                kind: ItemKind::Garlic,
                 is_washed: false,
                 state: ItemState::Unprocessed,
             })

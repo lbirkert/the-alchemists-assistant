@@ -37,7 +37,7 @@ impl Statistics {
 #[derive(Resource, Reflect)]
 #[reflect(Resource)]
 struct GameUpgrades {
-    items: HashMap<Item, UpgradeState>,
+    items: HashMap<ItemKind, UpgradeState>,
     stations: HashMap<Station, UpgradeState>,
 }
 
@@ -50,7 +50,7 @@ enum UpgradeState {
 
 #[derive(Message, Clone, Copy, Debug)]
 pub enum NewUnlock {
-    Item(Item),
+    Item(ItemKind),
     Station(Station),
 }
 
@@ -86,23 +86,24 @@ impl UnlockCondition {
 
 impl Default for GameUpgrades {
     fn default() -> Self {
-        let items = Item::iter()
+        let items = ItemKind::iter()
             .map(|item| {
                 (
                     item,
                     match item {
-                        Item::Garlic { .. } => UpgradeState::UnlockedByDefault,
-                        Item::Flowers { .. } => UpgradeState::UnlockedByDefault,
-                        Item::Grass { .. } => UpgradeState::Locked {
+                        ItemKind::Garlic => UpgradeState::UnlockedByDefault,
+                        ItemKind::Flowers => UpgradeState::UnlockedByDefault,
+                        ItemKind::Grass => UpgradeState::Locked {
                             requirements: vec![UnlockCondition::item(
-                                Item::Flowers {
-                                    state: Default::default(),
-                                    is_washed: Default::default(),
+                                Item {
+                                    kind: ItemKind::Flowers,
+                                    state: ItemState::Grinded,
+                                    is_washed: false,
                                 },
                                 3,
                             )],
                         },
-                        Item::Crystal { .. } => UpgradeState::Locked {
+                        ItemKind::Crystal => UpgradeState::Locked {
                             requirements: vec![UnlockCondition::TotalItemsProcessed(10)],
                         },
                     },
@@ -127,8 +128,8 @@ impl Default for GameUpgrades {
 }
 
 impl GameUpgrades {
-    fn item_is_locked(&self, item: &Item) -> bool {
-        matches!(self.items[item], UpgradeState::Locked { .. })
+    fn item_is_locked(&self, item_kind: &ItemKind) -> bool {
+        matches!(self.items[item_kind], UpgradeState::Locked { .. })
     }
 
     fn station_is_locked(&self, station: &Station) -> bool {
@@ -142,7 +143,7 @@ fn hide_locked_things(
     stations: Query<(&ProcessingStation, &mut Visibility), Added<ProcessingStation>>,
 ) {
     for (source, mut visibility) in sources {
-        if upgrades.item_is_locked(&source.item) {
+        if upgrades.item_is_locked(&source.item.kind) {
             *visibility = Visibility::Hidden;
         }
     }
@@ -179,7 +180,7 @@ fn check_upgrade_requirements(
     }
 
     for (source, mut visibility) in sources {
-        if *visibility == Visibility::Hidden && !upgrades.item_is_locked(&source.item) {
+        if *visibility == Visibility::Hidden && !upgrades.item_is_locked(&source.item.kind) {
             *visibility = Visibility::Inherited;
         }
     }

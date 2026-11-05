@@ -3,7 +3,7 @@
 pub use crate::game_layer::GameLayer;
 pub use crate::interaction::{Interactable, PlayerFocus, PlayerInteraction};
 pub use crate::inventory::{Inventory, Selection};
-pub use crate::item::{Item, ItemDiscardable, ItemPlaceable, ItemState};
+pub use crate::item::{Item, ItemDiscardable, ItemKind, ItemPlaceable, ItemState};
 pub use crate::player::PlayerCursor;
 pub use crate::recipe::Recipe;
 pub use crate::scene::EnvironmentObject;

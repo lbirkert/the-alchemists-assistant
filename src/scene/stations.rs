@@ -124,33 +124,27 @@ impl Station {
 
     fn pestle_item(&self, item: Item) -> Item {
         match item {
-            Item::Garlic {
+            Item {
+                kind: ItemKind::Garlic,
                 state: ItemState::Unprocessed,
-                is_washed,
-            } => Item::Garlic {
-                state: ItemState::Grinded,
-                is_washed,
-            },
-            Item::Garlic {
+                ..
+            } => item.grinded(),
+            Item {
+                kind: ItemKind::Garlic,
                 state: ItemState::Sliced | ItemState::Grinded,
-                is_washed,
-            } => Item::Garlic {
-                state: ItemState::FineGrinded,
-                is_washed,
-            },
+                ..
+            } => item.fine_grinded(),
             _ => item,
         }
     }
 
     fn cut_item(&self, item: Item) -> Item {
         match item {
-            Item::Garlic {
+            Item {
+                kind: ItemKind::Garlic,
                 state: ItemState::Unprocessed,
-                is_washed,
-            } => Item::Garlic {
-                state: ItemState::Sliced,
-                is_washed,
-            },
+                ..
+            } => item.sliced(),
             _ => item,
         }
     }

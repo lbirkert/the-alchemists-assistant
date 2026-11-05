@@ -32,13 +32,22 @@ impl ItemSource {
 // we might want to use https://github.com/FraserLee/bevy_sprite3d/blob/main/examples/sprite.rs
 // for rendering the items. -> Ask faervan
 
-#[derive(Component, Reflect, EnumIter, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Component, Reflect, Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 #[reflect(Component)]
-pub enum Item {
-    Garlic { state: ItemState, is_washed: bool },
-    Crystal { state: ItemState, is_washed: bool },
-    Grass { state: ItemState, is_washed: bool },
-    Flowers { state: ItemState, is_washed: bool },
+pub struct Item {
+    pub kind: ItemKind,
+    pub state: ItemState,
+    pub is_washed: bool,
+}
+
+#[derive(Component, Reflect, EnumIter, Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+#[reflect(Component)]
+pub enum ItemKind {
+    #[default]
+    Garlic,
+    Crystal,
+    Grass,
+    Flowers,
 }
 
 #[derive(Reflect, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -50,28 +59,30 @@ pub enum ItemState {
     FineGrinded,
 }
 
+impl std::fmt::Display for ItemKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Garlic => "Garlic",
+                Self::Crystal => "Crystal",
+                Self::Grass => "Grass",
+                Self::Flowers => "Flowers",
+            }
+        )
+    }
+}
+
 impl std::fmt::Display for Item {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Item::Garlic { state, is_washed } => {
-                write!(f, "{}Garlic", Self::name_prefix(state, is_washed))
-            }
-            Item::Crystal { state, is_washed } => {
-                write!(f, "{}Crystal", Self::name_prefix(state, is_washed))
-            }
-            Item::Flowers { state, is_washed } => {
-                write!(f, "{}Flowers", Self::name_prefix(state, is_washed))
-            }
-            Item::Grass { state, is_washed } => {
-                write!(f, "{}Grass", Self::name_prefix(state, is_washed))
-            }
-        }
+        write!(f, "{}{}", self.name_prefix(), self.kind)
     }
 }
 
 impl Item {
-    fn name_prefix(state: &ItemState, is_washed: &bool) -> String {
-        match (is_washed, state) {
+    fn name_prefix(&self) -> String {
+        match (self.is_washed, self.state) {
             (false, ItemState::Unprocessed) => format!(""),
             (false, ItemState::Sliced) => format!("Sliced "),
             (false, ItemState::Grinded) => format!("Grinded "),
@@ -83,27 +94,17 @@ impl Item {
         }
     }
 
-    // returns a short description without the prefix
-    pub fn short(&self) -> &'static str {
-        match self {
-            Item::Garlic { .. } => "Garlic",
-            Item::Crystal { .. } => "Crystal",
-            Item::Grass { .. } => "Grass",
-            Item::Flowers { .. } => "Flowers",
-        }
-    }
-
     pub fn scene(self, asset_server: &AssetServer, pos: Vec3) -> impl Scene {
-        let asset = match self {
-            Item::Garlic { state, .. } => match state {
+        let asset = match self.kind {
+            ItemKind::Garlic => match self.state {
                 ItemState::Unprocessed => "Garlic.glb",
                 ItemState::Sliced => "SlicedGarlic.glb",
                 ItemState::Grinded => "GrindedGarlic.glb",
                 ItemState::FineGrinded => "FineGrindedGarlic.glb",
             },
-            Item::Grass { .. } => "Grass.glb",
-            Item::Flowers { .. } => "Flowers.glb",
-            Item::Crystal { state, .. } => match state {
+            ItemKind::Grass => "Grass.glb",
+            ItemKind::Flowers => "Flowers.glb",
+            ItemKind::Crystal => match self.state {
                 ItemState::Unprocessed => "Crystal.glb",
                 ItemState::Grinded => "GrindedCrystal.glb",
                 ItemState::FineGrinded => "FineGrindedCrystal.glb",
@@ -129,5 +130,29 @@ impl Item {
             @scene
             Interactable::Item({self})
         }
+    }
+
+    /// Set the state to sliced.
+    pub fn sliced(mut self) -> Self {
+        self.state = ItemState::Sliced;
+        self
+    }
+
+    /// Set the state to grinded.
+    pub fn grinded(mut self) -> Self {
+        self.state = ItemState::Grinded;
+        self
+    }
+
+    /// Set the state to fine grinded.
+    pub fn fine_grinded(mut self) -> Self {
+        self.state = ItemState::FineGrinded;
+        self
+    }
+
+    /// Set the state to washed.
+    pub fn washed(mut self) -> Self {
+        self.is_washed = true;
+        self
     }
 }

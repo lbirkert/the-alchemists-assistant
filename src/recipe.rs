@@ -23,14 +23,14 @@ enum NameGender {
     Female,
 }
 
-pub const GREETINGS: [&'static str; 3] = [
+pub const GREETINGS: [&str; 3] = [
     "Good Morning Greg. I've already prepared everything. Now get to work!",
     "Howdy My Friend. Feeling Good huh...? Yes? Get to work then!",
     "Hello Greg. I hope your morning was better than mine... No? Life goes on Anyways, just get to work!",
     // TODO
 ];
 
-const NAMES: [(NameGender, &'static str); 10] = [
+const NAMES: [(NameGender, &str); 10] = [
     (NameGender::Male, "Nate"),
     (NameGender::Male, "Albert"),
     (NameGender::Male, "Vincent"),
@@ -43,7 +43,7 @@ const NAMES: [(NameGender, &'static str); 10] = [
     (NameGender::Female, "Lex"),
 ];
 
-const PROBLEMS: [&'static str; 10] = [
+const PROBLEMS: [&str; 10] = [
     "{name} asked me to cure {article_possessive} cancer. Let's give it a try!",
     "Yesterday I met {name} and {article_subject} asked me how to make {article_possessive} room plant grow bigger. Here's the recipe:",
     "Have I told you about {name} yet? Anyways, {article_subject} needs something against {article_possessive} warts.",
@@ -56,7 +56,7 @@ const PROBLEMS: [&'static str; 10] = [
     "Our plants look kinda dull. Cook this one up for me:",
 ];
 
-const POSITIVE_RESULTS: [&'static str; 10] = [
+const POSITIVE_RESULTS: [&str; 10] = [
     "{article_subject} is cancer-free! Wait, that's not how medicine works... Anyways, well done!",
     "The plant is HUGE! {article_subject} might need a bigger room now. Well done!",
     "{article_possessive} warts are gone! {article_subject} says you're a miracle worker. Thank you!",
@@ -69,7 +69,7 @@ const POSITIVE_RESULTS: [&'static str; 10] = [
     "The plants look amazing! My garden is basically a jungle now. Well done!",
 ];
 
-const NEGATIVE_RESULTS: [&'static str; 10] = [
+const NEGATIVE_RESULTS: [&str; 10] = [
     "I don't think this bump's normal! What did you put in there?! Maybe leave medicine to the professionals...",
     "The plant is dead. {article_subject} specifically asked you NOT to kill it. What did you do?!",
     "{article_possessive} warts have quadrupled! {article_subject} is starting to look like a toad. Please improve your skills...",
@@ -82,7 +82,7 @@ const NEGATIVE_RESULTS: [&'static str; 10] = [
     "The plants look even worse! One of them actually turned brown while I was watching. You need to improve...",
 ];
 
-const START_PREFIXES: [&'static str; 5] = [
+const START_PREFIXES: [&str; 5] = [
     "Start with some ",
     "Begin with some ",
     "First, add some ",
@@ -90,7 +90,7 @@ const START_PREFIXES: [&'static str; 5] = [
     "Try to start with some ",
 ];
 
-const CONTINUE_PREFIXES: [&'static str; 6] = [
+const CONTINUE_PREFIXES: [&str; 6] = [
     "Also add some ",
     "Continue with some ",
     "We also need some ",
@@ -129,7 +129,8 @@ impl Recipe {
                 // TODO: check upgrades for valid ingredients
                 ingredients.push(Ingredient {
                     steps_description: Self::steps_description(state, is_washed),
-                    item: Item::Garlic {
+                    item: Item {
+                        kind: ItemKind::Garlic,
                         is_washed: *is_washed,
                         state: *state,
                     },
@@ -154,7 +155,8 @@ impl Recipe {
                 // TODO: check upgrades for valid ingredients
                 ingredients.push(Ingredient {
                     steps_description: Self::steps_description(state, is_washed),
-                    item: Item::Flowers {
+                    item: Item {
+                        kind: ItemKind::Flowers,
                         is_washed: *is_washed,
                         state: *state,
                     },
@@ -193,9 +195,7 @@ impl Recipe {
 
             let ingredient_text = format!(
                 "{}{}. {}",
-                prefix,
-                ingredient.item.short(),
-                ingredient.steps_description
+                prefix, ingredient.item.kind, ingredient.steps_description
             );
 
             ingredient_texts.push(ingredient_text);
