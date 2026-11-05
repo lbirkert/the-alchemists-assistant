@@ -7,6 +7,7 @@ mod game_layer;
 mod interaction;
 mod inventory;
 mod item;
+mod management;
 mod player;
 mod prelude;
 mod recipe;
