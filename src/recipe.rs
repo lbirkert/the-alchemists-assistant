@@ -105,12 +105,12 @@ impl Recipe {
     match (is_washed, state) {
         (false, ItemState::Unprocessed) => format!("Just add to the cauldron."),
         (false, ItemState::Sliced) => format!("Slice and add to the cauldron."),
-        (false, ItemState::MortaredCoarse) => format!("Crush and add to the cauldron."),
-        (false, ItemState::MortaredFine) => format!("Crush well and add to the cauldron."),
+        (false, ItemState::Grinded) => format!("Grind and add to the cauldron."),
+        (false, ItemState::FineGrinded) => format!("Grind fine! and add to the cauldron."),
         (true, ItemState::Unprocessed) => format!("Wash and add to the cauldron."),
         (true, ItemState::Sliced) => format!("Wash, slice and add to the cauldron."),
-        (true, ItemState::MortaredCoarse) => format!("Wash, crush and add to the cauldron."),
-        (true, ItemState::MortaredFine) => format!("Wash, crush fine and add to the cauldron."),
+        (true, ItemState::Grinded) => format!("Wash, grind and add to the cauldron."),
+        (true, ItemState::FineGrinded) => format!("Wash, grind fine! and add to the cauldron."),
     }
 }
 
@@ -119,8 +119,8 @@ impl Recipe {
         const STATES: [ItemState; 4] = [
             ItemState::Unprocessed,
             ItemState::Sliced,
-            ItemState::MortaredCoarse,
-            ItemState::MortaredFine,
+            ItemState::Grinded,
+            ItemState::FineGrinded,
         ];
 
         let mut ingredients = Vec::new();
@@ -145,7 +145,7 @@ impl Recipe {
         const STATES: [ItemState; 3] = [
             ItemState::Unprocessed,
             ItemState::Sliced,
-            ItemState::MortaredFine,
+            ItemState::FineGrinded,
         ];
 
         let mut ingredients = Vec::new();

@@ -45,8 +45,8 @@ pub enum Item {
 pub enum ItemState {
     Unprocessed,
     Sliced,
-    MortaredCoarse,
-    MortaredFine,
+    Grinded,
+    FineGrinded,
 }
 
 impl std::fmt::Display for Item {
@@ -73,12 +73,12 @@ impl Item {
         match (is_washed, state) {
             (false, ItemState::Unprocessed) => format!(""),
             (false, ItemState::Sliced) => format!("Sliced "),
-            (false, ItemState::MortaredCoarse) => format!("Coarse-Mortared "),
-            (false, ItemState::MortaredFine) => format!("Fine-Mortared "),
+            (false, ItemState::Grinded) => format!("Grinded "),
+            (false, ItemState::FineGrinded) => format!("Fine-Grinded "),
             (true, ItemState::Unprocessed) => format!("Washed "),
             (true, ItemState::Sliced) => format!("Washed Sliced "),
-            (true, ItemState::MortaredCoarse) => format!("Washed Coarse-Mortared "),
-            (true, ItemState::MortaredFine) => format!("Washed Fine-Mortared "),
+            (true, ItemState::Grinded) => format!("Washed Coarse-Mortared "),
+            (true, ItemState::FineGrinded) => format!("Washed Fine-Mortared "),
         }
     }
 
@@ -107,14 +107,14 @@ impl Item {
                 state: ItemState::Unprocessed,
                 is_washed,
             } => Item::Garlic {
-                state: ItemState::MortaredCoarse,
+                state: ItemState::Grinded,
                 is_washed,
             },
             Item::Garlic {
-                state: ItemState::Sliced | ItemState::MortaredCoarse,
+                state: ItemState::Sliced | ItemState::Grinded,
                 is_washed,
             } => Item::Garlic {
-                state: ItemState::MortaredFine,
+                state: ItemState::FineGrinded,
                 is_washed,
             },
             _ => self,
@@ -139,12 +139,17 @@ impl Item {
             Item::Garlic { state, .. } => match state {
                 ItemState::Unprocessed => "Garlic.glb",
                 ItemState::Sliced => "SlicedGarlic.glb",
-                ItemState::MortaredCoarse => "GrindedGarlic.glb",
-                ItemState::MortaredFine => "FineGrindedGarlic.glb",
+                ItemState::Grinded => "GrindedGarlic.glb",
+                ItemState::FineGrinded => "FineGrindedGarlic.glb",
             },
             Item::Grass { .. } => "Grass.glb",
             Item::Flowers { .. } => "Flowers.glb",
-            Item::Crystal { .. } => "Crystal.glb",
+            Item::Crystal { state, .. } => match state {
+                ItemState::Unprocessed => "Crystal.glb",
+                ItemState::Grinded => "GrindedCrystal.glb",
+                ItemState::FineGrinded => "FineGrindedCrystal.glb",
+                ItemState::Sliced => panic!(),
+            },
         };
 
         let asset = asset_server.load(GltfAssetLabel::Scene(0).from_asset(asset));
