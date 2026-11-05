@@ -45,12 +45,7 @@ fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) 
     let player_entity = commands.spawn_scene(bsn! {
         #Player
         Player
-        Inventory {
-            selection: Selection::Item(Item::Garlic {
-                is_washed: false,
-                state: ItemState::Unprocessed,
-            })
-        }
+        Inventory
         Transform {
             translation: PLAYER_SPAWN_POS
         }

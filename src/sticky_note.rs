@@ -5,20 +5,10 @@ use bevy::{
 use crate::{prelude::*, utils};
 
 pub fn plugin(app: &mut App) {
-    // TODO: proper day management system
-    app.insert_resource(CurrentRecipes {
-        recipes: Vec::new(),
-    });
-    app.add_systems(GameUpdate, update_whiteboard);
     app.add_systems(GameUpdate, set_sticky_note_texture);
     app.add_systems(GameUpdate, pickup_sticky_note);
     app.add_systems(GameUpdate, place_sticky_note);
 }
-
-// TODO: remove bc obsolete
-#[derive(Component, Reflect, Default, Debug, Clone, Copy)]
-#[reflect(Component)]
-pub struct Whiteboard;
 
 #[derive(Component, Reflect, Default, Debug, Clone)]
 #[reflect(Default)]
@@ -26,6 +16,7 @@ pub struct Whiteboard;
 #[component(on_remove)]
 pub struct NoteMaterial {
     image_handle: Option<Handle<Image>>,
+    material_handle: Option<Handle<StandardMaterial>>,
     texture_camera: Option<Entity>,
     texture_content: Option<Entity>,
 }
@@ -47,7 +38,14 @@ impl NoteMaterial {
             commands.entity(content).despawn();
         }
 
-        // remove material
+        if let Some(material) = note_material.material_handle {
+            commands.queue(move |world: &mut World| {
+                world
+                    .resource_mut::<Assets<StandardMaterial>>()
+                    .remove(material.id());
+            });
+        }
+
         if let Some(image) = note_material.image_handle {
             commands.queue(move |world: &mut World| {
                 world.resource_mut::<Assets<Image>>().remove(image.id());
@@ -89,40 +87,6 @@ impl StickyNote {
 #[reflect(Component)]
 #[require(Interactable::StickyNotePlaceable)]
 pub struct StickyNotePlaceable;
-
-#[derive(Resource)]
-pub struct CurrentRecipes {
-    pub recipes: Vec<Recipe>,
-}
-
-// TODO: deprecate this in favor of a proper day management system (+ npc)
-fn update_whiteboard(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    whiteboard_query: Query<Entity, With<Whiteboard>>,
-    mut current_recipes: ResMut<CurrentRecipes>,
-) {
-    let Ok(whiteboard) = whiteboard_query.single() else {
-        return;
-    };
-
-    if current_recipes.recipes.len() != 0 {
-        return;
-    }
-
-    let text = Recipe::generate().task_description;
-    current_recipes.recipes.push(Recipe::generate());
-
-    let scene = asset_server.load("StickyNotes.glb#Scene0");
-    commands.entity(whiteboard).with_children(|parent| {
-        parent.spawn((
-            Name::new("StickyNote"),
-            StickyNote { text, recipe: None },
-            WorldAssetRoot(scene),
-            Transform::from_xyz(-0.03, 0.0, 0.01).looking_to(Vec3::NEG_X, Vec3::Y),
-        ));
-    });
-}
 
 fn pickup_sticky_note(
     mut commands: Commands,
@@ -179,12 +143,8 @@ fn place_sticky_note(
     let Some(Selection::StickyNote(sticky_note)) = inventory.selection.take() else {
         return;
     };
-
-    let scene = sticky_note.scene(
-        &asset_server,
-        *position,
-        Quat::from_rotation_arc(Vec3::Z, *normal),
-    );
+    let rotation = Transform::IDENTITY.looking_to(*normal, Vec3::Y).rotation;
+    let scene = sticky_note.scene(&asset_server, *position, rotation);
     commands.spawn_scene(scene);
 }
 
@@ -201,64 +161,71 @@ fn set_sticky_note_texture(
 ) {
     for (entity, material, mut note_material) in note_materials {
         if note_material.image_handle.is_some() {
-            return;
+            continue;
         }
 
         let mut sticky_note = utils::find_parent::<StickyNote>(entity, &query)
             .and_then(|e| sticky_notes.get_mut(e).ok());
 
         let Some(ref mut note) = sticky_note else {
-            return;
+            continue;
         };
 
-        if let Some(mut material) = materials.get_mut(material) {
-            // Create a texture to render into.
-            let image = Image::new_target_texture(512, 512, TextureFormat::Bgra8UnormSrgb, None);
+        let Some(mut material) = materials.get(material).cloned() else {
+            continue;
+        };
 
-            let image_handle = images.add(image);
+        // Create a texture to render into.
+        let image = Image::new_target_texture(512, 512, TextureFormat::Bgra8UnormSrgb, None);
 
-            let texture_camera = commands
-                .spawn((
-                    Camera2d,
-                    Camera {
-                        order: -1,
+        let image_handle = images.add(image);
+
+        let texture_camera = commands
+            .spawn((
+                Camera2d,
+                Camera {
+                    order: -1,
+                    ..default()
+                },
+                RenderTarget::Image(image_handle.clone().into()),
+            ))
+            .id();
+
+        let font: Handle<Font> = asset_server.load("FirstTimeWriting.ttf");
+
+        let texture_content = commands
+            .spawn((
+                Node {
+                    width: percent(100),
+                    height: percent(100),
+                    justify_content: JustifyContent::Center,
+                    padding: UiRect::all(percent(5)),
+                    align_items: AlignItems::Start,
+                    ..default()
+                },
+                BackgroundColor(Color::srgb(1.0, 1.0, 0.5)),
+                UiTargetCamera(texture_camera),
+                children![(
+                    Text::new(note.text.clone()),
+                    TextFont {
+                        font_size: FontSize::Px(26.0),
+                        font: FontSource::Handle(font),
                         ..default()
                     },
-                    RenderTarget::Image(image_handle.clone().into()),
-                ))
-                .id();
+                    TextColor(Color::BLACK)
+                )],
+            ))
+            .id();
 
-            let font: Handle<Font> = asset_server.load("FirstTimeWriting.ttf");
+        note_material.image_handle = Some(image_handle.clone());
+        note_material.texture_camera = Some(texture_camera);
+        note_material.texture_content = Some(texture_content);
+        material.base_color_texture = Some(image_handle);
 
-            let texture_content = commands
-                .spawn((
-                    Node {
-                        width: percent(100),
-                        height: percent(100),
-                        justify_content: JustifyContent::Center,
-                        padding: UiRect::all(percent(5)),
-                        align_items: AlignItems::Start,
-                        ..default()
-                    },
-                    BackgroundColor(Color::srgb(1.0, 1.0, 0.5)),
-                    UiTargetCamera(texture_camera),
-                    children![(
-                        Text::new(note.text.clone()),
-                        TextFont {
-                            font_size: FontSize::Px(26.0),
-                            font: FontSource::Handle(font),
-                            ..default()
-                        },
-                        TextColor(Color::BLACK)
-                    )],
-                ))
-                .id();
-
-            note_material.image_handle = Some(image_handle.clone());
-            note_material.texture_camera = Some(texture_camera);
-            note_material.texture_content = Some(texture_content);
-
-            material.base_color_texture = Some(image_handle);
-        }
+        let material_handle = materials.add(material);
+        note_material.material_handle = Some(material_handle.clone());
+        commands
+            .entity(entity)
+            .insert(MeshMaterial3d(material_handle));
     }
 }

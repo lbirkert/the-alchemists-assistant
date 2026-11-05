@@ -96,7 +96,9 @@ fn update_hud_text(
             (Interactable::StickyNotePlaceable, Some(Selection::StickyNote(_))) => {
                 format!("[RMB] place Sticky Note")
             }
-            (Interactable::ItemDiscardable, Some(in_hand)) => format!("[RMB] discard {in_hand}"),
+            (Interactable::ItemDiscardable, Some(Selection::Item(in_hand))) => {
+                format!("[RMB] discard {in_hand}")
+            }
             (Interactable::Source { .. }, Some(in_hand)) => format!("Already holding {in_hand}"),
             (
                 Interactable::ItemPlaceable

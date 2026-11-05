@@ -53,7 +53,7 @@ pub enum MessageToPlayer {
 #[derive(Reflect, Clone, Debug)]
 pub enum WalkIntoRoomReason {
     BellPressed,
-    BringRecipe(Recipe),
+    BringRecipes(Vec<Recipe>),
     SayToPlayer(MessageToPlayer),
 }
 
@@ -83,13 +83,9 @@ fn update_idle_npc(
         npc.state = NpcState::WalkIntoRoom(WalkIntoRoomReason::SayToPlayer(MessageToPlayer::Bye(
             "Bye Brotha".to_string(),
         )));
-    }
+        // TODO: proper messages
 
-    if manager.should_bring_recipe() {
-        let recipe = Recipe::generate();
-        manager.recipes.push(recipe.clone());
-        npc.state_start = time.elapsed_secs();
-        npc.state = NpcState::WalkIntoRoom(WalkIntoRoomReason::BringRecipe(recipe));
+        return;
     }
 
     if manager.should_greet() {
@@ -98,6 +94,24 @@ fn update_idle_npc(
         npc.state = NpcState::WalkIntoRoom(WalkIntoRoomReason::SayToPlayer(
             MessageToPlayer::Hello("Hello There!".to_string()),
         ));
+        // TODO: proper messages
+
+        return;
+    }
+
+    if manager.should_bring_recipe() {
+        // collect all recipes at once so you don't have to walk so much
+        let mut recipes = Vec::new();
+        while manager.should_bring_recipe() {
+            let recipe = Recipe::generate();
+            manager.recipes.push(recipe.clone());
+            recipes.push(recipe);
+        }
+
+        npc.state_start = time.elapsed_secs();
+        npc.state = NpcState::WalkIntoRoom(WalkIntoRoomReason::BringRecipes(recipes));
+
+        return;
     }
 }
 
@@ -120,8 +134,6 @@ fn listen_for_bell(
     else {
         return;
     };
-
-    info!("bell pressed: {:?}", npc.state);
 
     if !matches!(npc.state, NpcState::Idle) {
         return;
@@ -148,8 +160,9 @@ fn update_walking_npc(
     let (ref mut transform, ref mut npc) = *npc_query;
 
     let target_pos = match npc.state {
+        NpcState::WalkIntoRoom(WalkIntoRoomReason::SayToPlayer(..)) => Vec3::new(0.0, 0.0, 3.0),
         NpcState::WalkIntoRoom(..) => Vec3::new(0.0, 0.0, 10.0),
-        NpcState::WalkOutOfRoom(..) => Vec3::new(0.0, 0.0, 0.0),
+        NpcState::WalkOutOfRoom(..) => Vec3::new(0.0, 0.0, -5.0),
         _ => return,
     };
 
@@ -167,20 +180,25 @@ fn update_walking_npc(
                 }
                 None => NpcState::WalkOutOfRoom(WalkOutOfRoomReason::NoPotion),
             },
-            WalkIntoRoomReason::BringRecipe(recipe) => {
-                // spawn the sticky note
-                let scene = StickyNote {
-                    text: recipe.task_description.clone(),
-                    recipe: Some(recipe.clone()),
+            WalkIntoRoomReason::BringRecipes(recipes) => {
+                let mut offset = 0.0; // TODO: also account for existing sticky notes
+                for recipe in recipes.iter() {
+                    // spawn the sticky note
+                    let scene = StickyNote {
+                        text: recipe.task_description.clone(),
+                        recipe: Some(recipe.clone()),
+                    }
+                    .scene(
+                        &asset_server,
+                        Vec3::new(0.0, offset, 0.0),
+                        Quat::from_rotation_x(std::f32::consts::FRAC_PI_2),
+                    );
+                    commands
+                        .spawn_scene(scene)
+                        .insert(ChildOf(*npc_sticky_notes));
+
+                    offset += 0.02;
                 }
-                .scene(
-                    &asset_server,
-                    Vec3::ZERO,
-                    Quat::from_rotation_x(std::f32::consts::FRAC_PI_2),
-                );
-                commands
-                    .spawn_scene(scene)
-                    .insert(ChildOf(*npc_sticky_notes));
 
                 // check table for potions
                 match npc_table.validatable_potion() {
@@ -247,11 +265,6 @@ fn walk_npc(transform: &mut Transform, time: &Time, target_pos: Vec3) -> bool {
     let dt = time.delta().as_secs_f32();
     let movement = delta.normalize() * dt * NPC_SPEED;
     transform.translation += movement;
-
-    info!(
-        "curr translation: {} target: {}",
-        transform.translation, target_pos
-    );
 
     false
 }
