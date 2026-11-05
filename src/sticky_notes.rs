@@ -71,6 +71,16 @@ impl StickyNote {
             .entity(ctx.entity)
             .insert(Interactable::StickyNote(this));
     }
+
+    pub fn scene(self, asset_server: &AssetServer, pos: Vec3, normal: Vec3) -> impl Scene {
+        let scene = asset_server.load("StickyNotes.glb#Scene0");
+        bsn! {
+            #StickyNote
+            WorldAssetRoot(scene)
+            Transform::from_translation(pos).looking_to(normal, Vec3::Y)
+            self
+        }
+    }
 }
 
 #[derive(Component, Reflect, Default, Clone)]
@@ -83,6 +93,7 @@ pub struct CurrentRecipes {
     pub recipes: Vec<Recipe>,
 }
 
+// TODO: deprecate this in favor of a proper day management system (+ npc)
 fn update_whiteboard(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -100,15 +111,13 @@ fn update_whiteboard(
     let text = Recipe::generate().task_description;
     current_recipes.recipes.push(Recipe::generate());
 
-    info!("Spawn sticky note!");
-
     let scene = asset_server.load("StickyNotes.glb#Scene0");
     commands.entity(whiteboard).with_children(|parent| {
         parent.spawn((
             Name::new("StickyNote"),
             StickyNote { text },
             WorldAssetRoot(scene),
-            Transform::from_xyz(0.0, 0.0, 0.01),
+            Transform::from_xyz(-0.03, 0.0, 0.01).looking_to(Vec3::NEG_X, Vec3::Y),
         ));
     });
 }
@@ -178,13 +187,8 @@ fn place_sticky_note(
             return;
         };
 
-        let scene = asset_server.load("StickyNotes.glb#Scene0");
-        commands.spawn((
-            Name::new("StickyNote"),
-            sticky_note,
-            WorldAssetRoot(scene),
-            Transform::from_translation(*position).looking_to(*normal, Vec3::Y),
-        ));
+        let scene = sticky_note.scene(&asset_server, *position, *normal);
+        commands.spawn_scene(scene);
     }
 }
 
@@ -245,7 +249,8 @@ fn set_sticky_note_texture(
                     children![(
                         Text::new(note.text.clone()),
                         TextFont {
-                            font_size: FontSize::Px(26.0),
+                            font_size: FontSize::Px(28.0),
+                            weight: FontWeight(900),
                             font: FontSource::Handle(font),
                             ..default()
                         },
@@ -253,8 +258,6 @@ fn set_sticky_note_texture(
                     )],
                 ))
                 .id();
-
-            info!("render text {}", note.text);
 
             note_material.image_handle = Some(image_handle.clone());
             note_material.texture_camera = Some(texture_camera);

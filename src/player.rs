@@ -218,25 +218,36 @@ fn player_look(
 
 fn update_player_item_preview(
     mut commands: Commands,
-    assets_server: Res<AssetServer>,
+    asset_server: Res<AssetServer>,
     inventory: Single<&Inventory, Changed<Inventory>>,
     right_hand: Single<Entity, With<PlayerRightHand>>,
     children: Query<&Children>,
 ) {
-    if let Some(Selection::Item(item)) = inventory.selection {
-        let scene = item.scene(&assets_server, Vec3::ZERO);
-        commands.entity(*right_hand).apply_scene(bsn! {
-            Children [
+    match inventory.selection.as_ref().cloned() {
+        Some(Selection::Item(item)) => {
+            let scene = item.scene(&asset_server, Vec3::ZERO);
+            commands.entity(*right_hand).apply_scene(bsn! {
+                Children [
+                    @scene
+                ]
+            });
+        }
+        Some(Selection::StickyNote(sticky_note)) => {
+            let scene = sticky_note.scene(&asset_server, Vec3::ZERO, Vec3::Z);
+            commands.entity(*right_hand).apply_scene(bsn! {
+                Children [
                 @scene
             ]
-        });
-    } else {
-        let Ok(children) = children.get(*right_hand) else {
-            return;
-        };
-
-        for child in children {
-            commands.entity(*child).despawn();
+            });
         }
-    }
+        None => {
+            let Ok(children) = children.get(*right_hand) else {
+                return;
+            };
+
+            for child in children {
+                commands.entity(*child).despawn();
+            }
+        }
+    };
 }

@@ -18,11 +18,6 @@ mod ui;
 mod utils;
 
 pub fn main() -> AppExit {
-    for _ in 0..10 {
-        let recipe = recipe::Recipe::generate();
-        println!("----\n{}", recipe.task_description);
-    }
-
     let mut app = App::new();
     // Bevy plugins
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
