@@ -11,13 +11,17 @@ pub(super) fn plugin(app: &mut App) {
 pub struct MovementSettings {
     pub sensitivity: f32,
     pub speed: f32,
+    pub lr_speed_modifier: f32,
+    pub sprint_speed_modifier: f32,
 }
 
 impl Default for MovementSettings {
     fn default() -> Self {
         Self {
             sensitivity: 0.00012,
-            speed: 12.,
+            speed: 7.,
+            sprint_speed_modifier: 1.5,
+            lr_speed_modifier: 0.7,
         }
     }
 }
@@ -32,6 +36,7 @@ pub struct KeyBindings {
     pub move_right: KeyCode,
     pub move_ascend: KeyCode,
     pub move_descend: KeyCode,
+    pub move_sprint: KeyCode,
     pub pause_game: KeyCode,
 }
 
@@ -44,6 +49,7 @@ impl Default for KeyBindings {
             move_right: KeyCode::KeyD,
             move_ascend: KeyCode::Space,
             move_descend: KeyCode::ShiftLeft,
+            move_sprint: KeyCode::ShiftLeft,
             pause_game: KeyCode::Escape,
         }
     }
