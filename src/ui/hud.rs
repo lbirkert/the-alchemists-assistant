@@ -1,17 +1,32 @@
+use bevy_easings::CustomComponentEase;
+
 use crate::{
     drawer::Drawer,
     prelude::*,
     scene::stations::{ProcessingStation, StationState},
+    upgrades::NewUnlock,
 };
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GamePaused(false)), setup);
-    app.add_systems(GameUpdate, update_hud_text);
+    app.add_systems(
+        GameUpdate,
+        (
+            update_hud_text,
+            update_unlock_messages,
+            sync_font_size,
+            bevy_easings::custom_ease_system::<Virtual, FontSizeWrapper>,
+        ),
+    );
 }
 
 #[derive(Component, Reflect, Clone, Copy, Default)]
 #[reflect(Component)]
 struct HudText;
+
+#[derive(Component, Reflect, Clone, Copy, Default)]
+#[reflect(Component)]
+struct UnlockText;
 
 const CROSSHAIR_SIZE: f32 = 20.;
 const CROSSHAIR_THICKNESS: f32 = 2.;
@@ -33,6 +48,28 @@ fn setup(mut commands: Commands) {
                 bottom: px(10),
             }
             Text::new("")
+            --
+            #UnlockText
+            Node {
+                width: percent(100),
+                height: percent(70),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center
+            }
+            Pickable::IGNORE
+            Children [
+                UnlockText
+                UNLOCK_ZERO_FONT_SIZE
+                Text::new("")
+                TextFont {
+                    weight: FontWeight::BOLD
+                }
+                Node {
+                    padding: UiRect::axes(px(50), px(10))
+                }
+                BackgroundColor(Color::srgba(0., 0., 0., 0.))
+                Pickable::IGNORE
+            ]
             --
             #CrossHair
             Node {
@@ -136,4 +173,96 @@ fn update_hud_text(
         String::new()
     };
     text.0 = value;
+}
+
+#[derive(Component, Default, Clone)]
+struct FontSizeWrapper(FontSize);
+
+impl bevy_easings::Lerp for FontSizeWrapper {
+    type Scalar = f32;
+    fn lerp(&self, other: &Self, scalar: &Self::Scalar) -> Self {
+        let inner = match (self.0, other.0) {
+            (FontSize::Rem(x), FontSize::Rem(y)) => FontSize::Rem(x.lerp(y, *scalar)),
+            _ => unimplemented!(),
+        };
+        Self(inner)
+    }
+}
+
+const UNLOCK_ZERO_FONT_SIZE: FontSizeWrapper = FontSizeWrapper(FontSize::Rem(0.));
+const UNLOCK_FONT_SIZE: FontSizeWrapper = FontSizeWrapper(FontSize::Rem(1.6));
+
+const UNLOCK_ZERO_BACKGROUND: BackgroundColor = BackgroundColor(Color::srgba(0., 0., 0., 0.));
+const UNLOCK_BACKGROUND: BackgroundColor = BackgroundColor(Color::srgba(0., 0., 0., 0.8));
+
+fn update_unlock_messages(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut messages: MessageReader<NewUnlock>,
+    mut active_timer: Local<Option<(Timer, bool)>>,
+    mut queue: Local<VecDeque<NewUnlock>>,
+    mut text: Single<(Entity, &mut Text), With<UnlockText>>,
+) {
+    let (entity, text) = &mut *text;
+
+    for unlock in messages.read() {
+        queue.push_back(*unlock);
+    }
+
+    if let Some((timer, fade_out)) = &mut *active_timer {
+        timer.tick(time.delta());
+        if timer.remaining_secs() < 0.5 && *fade_out {
+            *fade_out = false;
+            commands.entity(*entity).insert((
+                UNLOCK_FONT_SIZE.ease_to(
+                    UNLOCK_ZERO_FONT_SIZE,
+                    EaseFunction::CubicOut,
+                    EasingType::Once {
+                        duration: Duration::from_millis(200),
+                    },
+                ),
+                UNLOCK_BACKGROUND.ease_to(
+                    UNLOCK_ZERO_BACKGROUND,
+                    EaseFunction::CubicOut,
+                    EasingType::Once {
+                        duration: Duration::from_millis(200),
+                    },
+                ),
+            ));
+        } else if timer.is_finished() {
+            *active_timer = None;
+            text.0 = String::new();
+        }
+    } else if let Some(unlock) = queue.pop_front() {
+        *active_timer = Some((
+            Timer::new(Duration::from_millis(5000), TimerMode::Once),
+            true,
+        ));
+        commands.entity(*entity).insert((
+            UNLOCK_ZERO_FONT_SIZE.ease_to(
+                UNLOCK_FONT_SIZE,
+                EaseFunction::SineIn,
+                EasingType::Once {
+                    duration: Duration::from_millis(500),
+                },
+            ),
+            UNLOCK_ZERO_BACKGROUND.ease_to(
+                UNLOCK_BACKGROUND,
+                EaseFunction::SineIn,
+                EasingType::Once {
+                    duration: Duration::from_millis(500),
+                },
+            ),
+        ));
+        text.0 = match unlock {
+            NewUnlock::Item(item) => format!("New Item Unlocked: {item:?}"),
+            NewUnlock::Station(station) => format!("New Station Unlocked: {station:?}"),
+        }
+    }
+}
+
+fn sync_font_size(query: Query<(&mut TextFont, &FontSizeWrapper), Changed<FontSizeWrapper>>) {
+    for (mut text, wrapper) in query {
+        text.font_size = wrapper.0;
+    }
 }

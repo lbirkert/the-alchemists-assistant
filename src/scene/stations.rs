@@ -16,7 +16,7 @@ pub struct ProcessingStation {
     set_animation: bool,
 }
 
-#[derive(Reflect, Default, Clone, Copy)]
+#[derive(Reflect, EnumIter, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Station {
     #[default]
     Mortar,
@@ -115,13 +115,13 @@ impl ProcessingStation {
 }
 
 impl Station {
-    fn process_item(&self, item: &mut Item) {
-        *item = match item {
+    fn process_item(&self, item: Item) -> Item {
+        match item {
             Item::Garlic => Item::Crystal,
             Item::Crystal => Item::Flowers,
             Item::Flowers => Item::Grass,
             Item::Grass => Item::Garlic,
-        };
+        }
     }
 }
 
@@ -201,7 +201,7 @@ fn station_interaction(
             }
             (StationState::Done { item, item_entity }, None) => {
                 commands.entity(*item_entity).despawn();
-                inventory.item = Some(*item);
+                inventory.item = Some(station.kind.process_item(*item));
                 station.state = StationState::Idle;
                 station.set_animation = true;
             }
@@ -216,6 +216,7 @@ fn update_station(
     focus: Res<PlayerFocus>,
     input: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
+    mut statistics: ResMut<Statistics>,
     stations: Query<(Entity, &ArmatureHandle, &mut ProcessingStation)>,
     mut station_armatures: Query<(
         &mut AnimationPlayer,
@@ -259,9 +260,9 @@ fn update_station(
                     timer.tick(time.delta());
                     if timer.fraction() > 0.5 && !*transformed {
                         *transformed = true;
-                        station_kind.process_item(item);
+                        let output_item = station_kind.process_item(*item);
                         commands.entity(*item_entity).despawn();
-                        let scene = item.scene(&asset_server, Vec3::new(0., 0.2, 0.));
+                        let scene = output_item.scene(&asset_server, Vec3::new(0., 0.2, 0.));
                         let new_item_entity = commands
                             .spawn_scene(bsn! {
                                 #StationItem
@@ -272,6 +273,7 @@ fn update_station(
                         *item_entity = new_item_entity;
                     }
                     if timer.just_finished() {
+                        statistics.process_item(*item);
                         station.state = StationState::Done {
                             item: *item,
                             item_entity: *item_entity,

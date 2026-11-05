@@ -14,6 +14,7 @@ mod settings;
 mod sounds;
 mod state;
 mod ui;
+mod upgrades;
 mod utils;
 
 pub fn main() -> AppExit {
@@ -50,6 +51,7 @@ pub fn main() -> AppExit {
         interaction::plugin,
         inventory::plugin,
         drawer::plugin,
+        upgrades::plugin,
     ));
 
     app.run()
