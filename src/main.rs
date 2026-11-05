@@ -18,6 +18,7 @@ mod sounds;
 mod state;
 mod sticky_note;
 mod ui;
+mod upgrades;
 mod utils;
 
 pub fn main() -> AppExit {
@@ -54,10 +55,10 @@ pub fn main() -> AppExit {
         interaction::plugin,
         inventory::plugin,
         drawer::plugin,
+        upgrades::plugin,
         sticky_note::plugin,
-        npc::plugin,
-        manager::plugin,
     ));
+    app.add_plugins((manager::plugin, npc::plugin));
 
     app.run()
 }

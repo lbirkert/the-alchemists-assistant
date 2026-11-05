@@ -12,6 +12,8 @@ pub fn plugin(app: &mut App) {
 #[derive(Resource, Reflect, Debug, Default)]
 #[reflect(Resource)]
 pub struct PlayerFocus {
+    /// Stores the Entity and Interactable component of the entity currently focused by the player,
+    /// if any.
     pub interactable: Option<(Entity, Interactable)>,
 }
 
@@ -28,6 +30,7 @@ pub struct PlayerInteraction {
 pub enum Interactable {
     Item(Item),
     StickyNote(StickyNote),
+    #[default]
     ItemPlaceable,
     StickyNotePlaceable,
     ItemDiscardable,
@@ -36,8 +39,7 @@ pub enum Interactable {
         item: Item,
     },
     Drawer,
-    #[default]
-    Mortar,
+    Station,
 }
 
 fn interaction(
@@ -49,6 +51,7 @@ fn interaction(
     mut focus: ResMut<PlayerFocus>,
 ) {
     if let Some((mesh_entity, hit)) = pointer.get_nearest_hit()
+        && hit.depth < 5.
         && let Some(entity) = crate::utils::find_parent(*mesh_entity, &query)
         && let Ok(interactable) = interactables.get(entity)
     {

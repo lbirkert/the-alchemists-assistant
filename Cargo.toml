@@ -26,6 +26,7 @@ clap = { version = "4", features = ["derive"] }
 rand = "0.10"
 ron = "0.12"
 thiserror = "2"
+strum = { version = "0.28", features = ["derive"] }
 
 # Logging
 # Set max log levels. This helps avoid unwanted low-severity log spam, which can affect performance.

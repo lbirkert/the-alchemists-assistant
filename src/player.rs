@@ -21,9 +21,10 @@ pub(super) fn plugin(app: &mut App) {
             update_player_item_preview,
             fix_fall_to_void,
             player_look.before(player_move),
-            player_move.in_set(PhysicsSystems::First),
         ),
     );
+
+    app.add_systems(FixedUpdate, (apply_linear_damping, player_move).chain());
 }
 
 const PLAYER_SPAWN_POS: Vec3 = Vec3::new(2., 2., 0.);
@@ -49,6 +50,7 @@ fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) 
         Transform {
             translation: PLAYER_SPAWN_POS
         }
+        TransformInterpolation
         Visibility::Inherited
         RigidBody::Dynamic
         Collider::capsule(0.4, 1.8)
@@ -132,6 +134,12 @@ fn update_pointer_pos(
     }
 }
 
+fn apply_linear_damping(mut forces: Single<Forces, With<Player>>) {
+    let velocity = forces.linear_velocity();
+    let drag_accel = -velocity * 25.0;
+    forces.apply_linear_acceleration(Vec3::new(drag_accel.x, 0.0, drag_accel.z));
+}
+
 /// Handles keyboard input and movement
 fn player_move(
     mut commands: Commands,
@@ -139,12 +147,15 @@ fn player_move(
     primary_cursor_options: Single<&mut CursorOptions, With<PrimaryWindow>>,
     settings: Res<MovementSettings>,
     key_bindings: Res<KeyBindings>,
-    mut player_velocity: Single<(Entity, &mut LinearVelocity, Has<IsMoving>), With<Player>>,
+    mut player_query: Single<(Entity, Forces, Has<IsMoving>), With<Player>>,
     camera_transform: Single<&Transform, With<PlayerEyes>>,
+    time: Res<Time>,
 ) {
-    let (entity, velocity, has_moving) = &mut *player_velocity;
+    let (entity, forces, has_moving) = &mut *player_query;
+    let velocity = forces.linear_velocity();
     let mut direction = Vec3::ZERO;
 
+    let mut speed_modifier = 1.0;
     for key in keys.get_pressed() {
         match primary_cursor_options.grab_mode {
             CursorGrabMode::None => (),
@@ -158,6 +169,8 @@ fn player_move(
                     direction += Vec3::NEG_X;
                 } else if key == key_bindings.move_right {
                     direction += Vec3::X;
+                } else if key == key_bindings.move_sprint {
+                    speed_modifier = settings.sprint_speed_modifier;
                 }
             }
         }
@@ -170,11 +183,12 @@ fn player_move(
     }
 
     let (yaw, _pitch, _roll) = camera_transform.rotation.to_euler(EulerRot::YXZ);
-    direction = Quat::from_rotation_y(yaw) * direction.normalize_or_zero();
+    direction = direction.normalize_or_zero();
+    direction.x *= settings.lr_speed_modifier;
+    direction = Quat::from_rotation_y(yaw) * direction;
 
-    let v = direction * settings.speed;
-    velocity.0.x = v.x;
-    velocity.0.z = v.z;
+    let accel = direction * settings.speed * speed_modifier * 30.0;
+    forces.apply_linear_acceleration(Vec3::new(accel.x, 0.0, accel.z));
 }
 
 /// Handles looking around if cursor is locked

@@ -3,7 +3,7 @@
 pub use crate::game_layer::GameLayer;
 pub use crate::interaction::{Interactable, PlayerFocus, PlayerInteraction};
 pub use crate::inventory::{Inventory, Selection};
-pub use crate::item::{Item, ItemDiscardable, ItemPlaceable, ItemState};
+pub use crate::item::{Item, ItemDiscardable, ItemKind, ItemPlaceable, ItemState};
 pub use crate::player::PlayerCursor;
 pub use crate::recipe::{Potion, Recipe};
 pub use crate::scene::EnvironmentObject;
@@ -13,15 +13,20 @@ pub use crate::state::{
     SettingsOpen, TitleScreenPostUpdate, TitleScreenUpdate,
 };
 pub use crate::sticky_note::StickyNote;
+pub use crate::upgrades::Statistics;
 
+pub use std::collections::VecDeque;
 pub use std::time::Duration;
 
 pub use rand::seq::IndexedRandom as _;
+
+pub use strum::{EnumIter, IntoEnumIterator as _};
 
 pub use bevy::ecs::lifecycle::HookContext;
 pub use bevy::ecs::world::DeferredWorld;
 pub use bevy::input::common_conditions::{input_just_pressed, input_toggle_active};
 pub use bevy::picking::pointer::PointerInteraction;
+pub use bevy::platform::collections::HashMap;
 pub use bevy::prelude::*;
 pub use bevy::ui_widgets::Activate;
 

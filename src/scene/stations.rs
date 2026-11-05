@@ -3,29 +3,34 @@ use bevy::world_serialization::WorldInstanceReady;
 use crate::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(GameUpdate, (mortar_interaction, update_mortar));
+    app.add_systems(GameUpdate, (station_interaction, update_station));
 }
-
-#[derive(Component, Reflect, Default)]
-#[reflect(Component)]
-#[require(EnvironmentObject, Collider::cuboid(2., 0.5, 0.8))]
-struct AlchemyTable;
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component, Default)]
-#[require(Interactable::Mortar)]
+#[require(Interactable::Station)]
 #[component(on_add)]
-pub struct MortarStation {
-    pub state: MortarState,
+pub struct ProcessingStation {
+    pub state: StationState,
+    pub kind: Station,
     set_animation: bool,
 }
 
+#[derive(Reflect, EnumIter, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Station {
+    #[default]
+    Mortar,
+    CuttingBoard,
+}
+
 #[derive(Reflect, Default)]
-pub enum MortarState {
+pub enum StationState {
     #[default]
     Idle,
     Processing {
         working: bool,
+        /// Halfway through the process, the item will be replaced by it's target state.
+        transformed: bool,
         item: Item,
         item_entity: Entity,
         timer: Timer,
@@ -38,8 +43,7 @@ pub enum MortarState {
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component, Default)]
-#[component(on_add)]
-struct MortarStationArmature;
+struct StationArmature;
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
@@ -47,155 +51,266 @@ struct ArmatureHandle(Entity);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-struct MortarAnimations {
-    idle: AnimationNodeIndex,
-    pestle: AnimationNodeIndex,
+struct StationAnimations {
+    animations: Vec<AnimationNodeIndex>,
 }
 
-impl MortarStation {
+impl ProcessingStation {
     fn on_add(mut world: DeferredWorld, ctx: HookContext) {
-        world.commands().entity(ctx.entity).apply_scene(bsn! {
-            WorldAssetRoot("Mortar.glb#Scene0")
-            on(|
-                event: On<WorldInstanceReady>,
-                mut commands: Commands,
-                armatures: Query<Entity, With<MortarStationArmature>>,
-                mortars: Query<(Option<&ChildOf>, Has<MortarStation>)>
-            | {
-                for armature_entity in armatures {
-                    if let Some(mortar_entity)
-                        = crate::utils::find_parent(armature_entity, &mortars)
-                            && mortar_entity == event.entity {
-                        commands.entity(event.entity).insert(ArmatureHandle(armature_entity));
-                        return;
-                    }
-                }
-                error!("Failed to find mortar armature entity for mortar {}", event.entity);
-            })
-        });
-    }
-}
-
-impl MortarStationArmature {
-    fn on_add(mut world: DeferredWorld, ctx: HookContext) {
-        let asset_server = world.resource::<AssetServer>();
-        let (graph, animations) = AnimationGraph::from_clips(
-            ["Mortar.glb#Animation0", "Mortar.glb#Animation1"].map(|s| asset_server.load(s)),
-        );
-        let mut graphs = world.resource_mut::<Assets<AnimationGraph>>();
-        let graph_handle = graphs.add(graph);
-
-        let Some([idle, pestle]) = animations.as_array().copied() else {
-            error!("Failed to load mortar animations");
+        let Some(this) = world.get::<Self>(ctx.entity) else {
             return;
         };
+        let path = format!("{}#Scene0", this.asset_path());
+        world.commands().entity(ctx.entity).apply_scene(bsn! {
+            WorldAssetRoot(path)
+            on(instance_ready_setup_armature)
+        });
+    }
 
-        world.commands().entity(ctx.entity).insert((
-            AnimationGraphHandle(graph_handle),
-            AnimationTransitions::new(),
-            MortarAnimations { idle, pestle },
-        ));
+    const fn num_animations(&self) -> usize {
+        match self.kind {
+            Station::Mortar => 2,
+            Station::CuttingBoard => 2,
+        }
+    }
+
+    const fn asset_path(&self) -> &'static str {
+        match self.kind {
+            Station::Mortar => "Mortar.glb",
+            Station::CuttingBoard => "CuttingBoard.glb",
+        }
+    }
+
+    pub const fn base_verb(&self, capitalize: bool) -> &'static str {
+        match self.kind {
+            Station::Mortar if capitalize => "Pestle",
+            Station::Mortar => "pestle",
+            Station::CuttingBoard if capitalize => "Cut",
+            Station::CuttingBoard => "cut",
+        }
+    }
+
+    pub const fn ing_verb(&self) -> &'static str {
+        match self.kind {
+            Station::Mortar => "pestling",
+            Station::CuttingBoard => "cutting",
+        }
+    }
+
+    fn get_idle_animation(&self, handle: &StationAnimations) -> Option<AnimationNodeIndex> {
+        match self.kind {
+            Station::Mortar => handle.animations.first(),
+            Station::CuttingBoard => handle.animations.get(1),
+        }
+        .copied()
+    }
+
+    fn get_processing_animation(&self, handle: &StationAnimations) -> Option<AnimationNodeIndex> {
+        match self.kind {
+            Station::Mortar => handle.animations.get(1),
+            Station::CuttingBoard => handle.animations.first(),
+        }
+        .copied()
     }
 }
 
-fn mortar_interaction(
+impl Station {
+    pub fn process_item(&self, item: Item) -> Item {
+        match self {
+            Station::Mortar => self.pestle_item(item),
+            Station::CuttingBoard => self.cut_item(item),
+        }
+    }
+
+    fn pestle_item(&self, item: Item) -> Item {
+        match item {
+            Item {
+                kind: ItemKind::Garlic,
+                state: ItemState::Unprocessed,
+                ..
+            } => item.grinded(),
+            Item {
+                kind: ItemKind::Garlic,
+                state: ItemState::Sliced | ItemState::Grinded,
+                ..
+            } => item.fine_grinded(),
+            _ => item,
+        }
+    }
+
+    fn cut_item(&self, item: Item) -> Item {
+        match item {
+            Item {
+                kind: ItemKind::Garlic,
+                state: ItemState::Unprocessed,
+                ..
+            } => item.sliced(),
+            _ => item,
+        }
+    }
+}
+
+fn instance_ready_setup_armature(
+    event: On<WorldInstanceReady>,
+    mut commands: Commands,
+    mut graphs: ResMut<Assets<AnimationGraph>>,
+    asset_server: Res<AssetServer>,
+    armatures: Query<Entity, With<StationArmature>>,
+    search_stations: Query<(Option<&ChildOf>, Has<ProcessingStation>)>,
+    stations: Query<&ProcessingStation>,
+) {
+    for armature_entity in armatures {
+        if let Some(station_entity) = crate::utils::find_parent(armature_entity, &search_stations)
+            && station_entity == event.entity
+            && let Ok(station) = stations.get(station_entity)
+        {
+            let (graph, animations) = AnimationGraph::from_clips(
+                (0..station.num_animations())
+                    .map(|i| asset_server.load(format!("{}#Animation{i}", station.asset_path()))),
+            );
+            let graph_handle = graphs.add(graph);
+
+            commands.entity(armature_entity).insert((
+                AnimationGraphHandle(graph_handle),
+                AnimationTransitions::new(),
+                StationAnimations { animations },
+            ));
+            commands
+                .entity(event.entity)
+                .insert(ArmatureHandle(armature_entity));
+            return;
+        }
+    }
+    error!(
+        "Failed to find station armature entity for station {}",
+        event.entity
+    );
+}
+
+fn station_interaction(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut inventory: Single<&mut Inventory>,
     mut messages: MessageReader<PlayerInteraction>,
-    mut mortars: Query<&mut MortarStation>,
+    mut stations: Query<&mut ProcessingStation>,
 ) {
     if let Some(PlayerInteraction {
         entity,
-        kind: Interactable::Mortar,
+        kind: Interactable::Station,
         ..
     }) = messages.read().next()
-        && let Ok(mut mortar) = mortars.get_mut(*entity)
+        && let Ok(mut station) = stations.get_mut(*entity)
     {
-        match (&mortar.state, inventory.selection.as_ref()) {
-            (MortarState::Idle, Some(Selection::Item(item))) => {
+        match (&station.state, inventory.selection.as_ref()) {
+            (StationState::Idle, Some(Selection::Item(item))) => {
                 let scene = item.scene(&asset_server, Vec3::new(0., 0.2, 0.));
                 let item_entity = commands
                     .spawn_scene(bsn! {
-                        #MortarItem
+                        #StationItem
                         ChildOf({*entity})
                         @scene
                     })
                     .id();
-                mortar.state = MortarState::Processing {
+                station.state = StationState::Processing {
                     working: true,
+                    transformed: false,
                     item: *item,
                     item_entity,
                     timer: Timer::new(Duration::from_millis(2000), TimerMode::Once),
                 };
-                mortar.set_animation = true;
+                station.set_animation = true;
                 inventory.selection = None;
             }
-            (MortarState::Processing { .. }, _) => {
-                mortar.set_animation = true;
+            (StationState::Processing { .. }, _) => {
+                station.set_animation = true;
             }
-            (MortarState::Done { item, item_entity }, None) => {
+            (StationState::Done { item, item_entity }, None) => {
                 commands.entity(*item_entity).despawn();
-                inventory.selection = Some(Selection::Item(*item));
-                mortar.state = MortarState::Idle;
-                mortar.set_animation = true;
+                inventory.selection = Some(Selection::Item(station.kind.process_item(*item)));
+                station.state = StationState::Idle;
+                station.set_animation = true;
             }
             _ => {}
         }
     }
 }
 
-fn update_mortar(
+fn update_station(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
     focus: Res<PlayerFocus>,
     input: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
-    mortars: Query<(Entity, &ArmatureHandle, &mut MortarStation)>,
-    mut mortar_armatures: Query<(
+    mut statistics: ResMut<Statistics>,
+    stations: Query<(Entity, &ArmatureHandle, &mut ProcessingStation)>,
+    mut station_armatures: Query<(
         &mut AnimationPlayer,
         &mut AnimationTransitions,
-        &MortarAnimations,
+        &StationAnimations,
     )>,
 ) {
-    for (entity, ArmatureHandle(armature_entity), mut mortar) in mortars {
-        if mortar.set_animation
+    for (entity, ArmatureHandle(armature_entity), mut station) in stations {
+        if station.set_animation
             && let Ok((mut animation_player, mut transitions, animations)) =
-                mortar_armatures.get_mut(*armature_entity)
+                station_armatures.get_mut(*armature_entity)
         {
-            mortar.set_animation = false;
-            let animation = match mortar.state {
-                MortarState::Processing { working: true, .. } => animations.pestle,
-                _ => animations.idle,
+            station.set_animation = false;
+            let animation = match station.state {
+                StationState::Processing { working: true, .. } => {
+                    station.get_processing_animation(animations)
+                }
+                _ => station.get_idle_animation(animations),
             };
-            transitions
-                .play(&mut animation_player, animation, Duration::from_millis(100))
-                .repeat();
+            if let Some(animation) = animation {
+                transitions
+                    .play(&mut animation_player, animation, Duration::from_millis(100))
+                    .repeat();
+            }
         }
-        match &mut mortar.state {
-            MortarState::Idle => {}
-            MortarState::Processing {
+
+        let station_kind = station.kind;
+        match &mut station.state {
+            StationState::Idle => {}
+            StationState::Processing {
                 working,
+                transformed,
                 item,
                 item_entity,
                 timer,
             } => {
                 if input.pressed(MouseButton::Right)
-                    && focus.interactable == Some((entity, Interactable::Mortar))
+                    && focus.interactable == Some((entity, Interactable::Station))
                 {
                     *working = true;
                     timer.tick(time.delta());
+                    if timer.fraction() > 0.5 && !*transformed {
+                        *transformed = true;
+                        let output_item = station_kind.process_item(*item);
+                        commands.entity(*item_entity).despawn();
+                        let scene = output_item.scene(&asset_server, Vec3::new(0., 0.2, 0.));
+                        let new_item_entity = commands
+                            .spawn_scene(bsn! {
+                                #StationItem
+                                ChildOf(entity)
+                                @scene
+                            })
+                            .id();
+                        *item_entity = new_item_entity;
+                    }
                     if timer.just_finished() {
-                        mortar.state = MortarState::Done {
+                        statistics.process_item(*item);
+                        station.state = StationState::Done {
                             item: *item,
                             item_entity: *item_entity,
                         };
-                        mortar.set_animation = true;
+                        station.set_animation = true;
                     }
                 } else {
                     *working = false;
-                    mortar.set_animation = true;
+                    station.set_animation = true;
                 }
             }
-            MortarState::Done { .. } => {}
+            StationState::Done { .. } => {}
         }
     }
 }
