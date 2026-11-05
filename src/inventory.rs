@@ -12,8 +12,33 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component, Reflect, Default, Debug, Clone)]
 #[reflect(Component)]
 pub struct Inventory {
-    pub item: Option<Item>,
+    pub selection: Option<Selection>,
     // TODO: item_lh and item_rh
+}
+
+#[derive(Reflect, Debug, Clone)]
+pub enum Selection {
+    Item(Item),
+    StickyNote(StickyNote),
+}
+
+impl Selection {
+    pub fn is_item(&self) -> bool {
+        matches!(self, Selection::Item(..))
+    }
+
+    pub fn is_sticky_node(&self) -> bool {
+        matches!(self, Selection::StickyNote(..))
+    }
+}
+
+impl std::fmt::Display for Selection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Selection::Item(item) => write!(f, "{}", item),
+            Selection::StickyNote(..) => write!(f, "Sticky Note"),
+        }
+    }
 }
 
 fn pickup_item_from_source(
@@ -28,11 +53,11 @@ fn pickup_item_from_source(
         return;
     };
 
-    if inventory.item.is_some() {
+    if inventory.selection.is_some() {
         return;
     }
 
-    inventory.item = Some(*source);
+    inventory.selection = Some(Selection::Item(*source));
 }
 
 fn pickup_item(
@@ -51,14 +76,20 @@ fn pickup_item(
         return;
     };
 
+    if !inventory.selection.as_ref().is_none_or(|s| s.is_item()) {
+        return;
+    }
+
     if let Ok(item_transform) = transforms.get(*entity) {
-        let old_item = inventory.item.replace(*item);
-        if let Some(old_item) = old_item {
+        let old_item = inventory.selection.replace(Selection::Item(*item));
+        if let Some(Selection::Item(old_item)) = old_item {
+            let item_scene =
+                old_item.physics_scene(&assets_server, item_transform.translation, Vec3::ZERO);
+            commands.spawn_scene(item_scene);
             let item_scene =
                 old_item.physics_scene(&assets_server, item_transform.translation, Vec3::ZERO);
             commands.spawn_scene(item_scene);
         }
-
         // destroy old item
         commands.entity(*entity).despawn();
     }
@@ -71,7 +102,7 @@ fn place_item(
     mut inventory: Single<&mut Inventory>,
 ) {
     let Some(PlayerInteraction {
-        kind: Interactable::PlaceableLocation,
+        kind: Interactable::ItemPlaceable,
         hit:
             HitData {
                 position: Some(position),
@@ -84,7 +115,11 @@ fn place_item(
         return;
     };
 
-    let Some(item) = inventory.item.take() else {
+    if !inventory.selection.as_ref().is_some_and(|s| s.is_item()) {
+        return;
+    }
+
+    let Some(Selection::Item(item)) = inventory.selection.take() else {
         return;
     };
 
@@ -101,12 +136,16 @@ fn discard_item(
     mut inventory: Single<&mut Inventory>,
 ) {
     let Some(PlayerInteraction {
-        kind: Interactable::Discardable,
+        kind: Interactable::ItemDiscardable,
         ..
     }) = messages.read().next()
     else {
         return;
     };
 
-    inventory.item = None;
+    if !inventory.selection.as_ref().is_some_and(|s| s.is_item()) {
+        return;
+    }
+
+    inventory.selection = None;
 }

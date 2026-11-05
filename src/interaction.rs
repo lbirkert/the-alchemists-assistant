@@ -22,13 +22,15 @@ pub struct PlayerInteraction {
     pub hit: HitData,
 }
 
-#[derive(Component, Reflect, Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Component, Reflect, Debug, Default, Clone, PartialEq, Eq)]
 #[reflect(Component)]
 #[require(DespawnOnExit<GameState> = DespawnOnExit(GameState::Game))]
 pub enum Interactable {
     Item(Item),
-    PlaceableLocation,
-    Discardable,
+    StickyNote(StickyNote),
+    ItemPlaceable,
+    StickyNotePlaceable,
+    ItemDiscardable,
     Source {
         item: Item,
     },
@@ -49,13 +51,13 @@ fn interaction(
         && let Some(entity) = crate::utils::find_parent(*mesh_entity, &query)
         && let Ok(interactable) = interactables.get(entity)
     {
-        if Some((entity, *interactable)) != focus.interactable {
-            focus.interactable = Some((entity, *interactable));
+        if Some((entity, interactable.clone())) != focus.interactable {
+            focus.interactable = Some((entity, interactable.clone()));
         }
         if input.just_pressed(MouseButton::Right) {
             messages.write(PlayerInteraction {
                 entity,
-                kind: *interactable,
+                kind: interactable.clone(),
                 hit: hit.clone(),
             });
         }

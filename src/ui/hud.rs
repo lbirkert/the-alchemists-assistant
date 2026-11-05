@@ -83,25 +83,40 @@ fn update_hud_text(
         && let Some(entity) = crate::utils::find_parent(*mesh_entity, &interactable_search)
         && let Ok(interactable) = interactables.get(entity)
     {
-        match (interactable, inventory.item) {
+        match (interactable, inventory.selection.as_ref()) {
             (Interactable::Item(item), Some(in_hand)) => {
-                format!("[RMB] swap {item:?} with {in_hand:?}")
+                format!("[RMB] swap {item} with {in_hand}")
             }
             (Interactable::Item(item) | Interactable::Source { item }, None) => {
-                format!("[RMB] pick up {item:?}")
+                format!("[RMB] pick up {item}")
             }
-            (Interactable::PlaceableLocation, Some(in_hand)) => format!("[RMB] place {in_hand:?}"),
-            (Interactable::Discardable, Some(in_hand)) => format!("[RMB] discard {in_hand:?}"),
-            (Interactable::Source { .. }, Some(in_hand)) => format!("Already holding {in_hand:?}"),
+            (Interactable::ItemPlaceable, Some(Selection::Item(in_hand))) => {
+                format!("[RMB] place {in_hand}")
+            }
+            (Interactable::StickyNotePlaceable, Some(Selection::StickyNote(_))) => {
+                format!("[RMB] place Sticky Note")
+            }
+            (Interactable::ItemDiscardable, Some(in_hand)) => format!("[RMB] discard {in_hand}"),
+            (Interactable::Source { .. }, Some(in_hand)) => format!("Already holding {in_hand}"),
+            (
+                Interactable::ItemPlaceable
+                | Interactable::StickyNotePlaceable
+                | Interactable::ItemDiscardable,
+                None,
+            ) => String::new(),
             (Interactable::Drawer, _) => String::from(match drawers.get(entity) {
                 Ok(Drawer { opened: true, .. }) => "[RMB] close drawer",
                 Ok(Drawer { opened: false, .. }) => "[RMB] open drawer",
                 Err(_) => "",
             }),
+            (Interactable::StickyNote(_), None) => format!("[RMB] pick up Sticky Note"),
+            (Interactable::StickyNote(_), Some(in_hand)) => format!("Already holding {in_hand}"),
             (Interactable::Mortar, _) => {
                 if let Ok(mortar) = mortars.get(entity) {
-                    match (&mortar.state, inventory.item) {
-                        (MortarState::Idle, Some(in_hand)) => format!("[RMB] pestle {in_hand:?}"),
+                    match (&mortar.state, inventory.selection.as_ref()) {
+                        (MortarState::Idle, Some(Selection::Item(in_hand))) => {
+                            format!("[RMB] pestle {in_hand}")
+                        }
                         (
                             MortarState::Processing {
                                 working: false,
@@ -117,15 +132,15 @@ fn update_hud_text(
                                 ..
                             },
                             Some(in_hand),
-                        ) => format!("[RMB] cannot pestle {item:?} while holding {in_hand:?}"),
-                        (MortarState::Done { item, .. }, None) => format!("[RMB] take {item:?}"),
+                        ) => format!("[RMB] cannot pestle {item} while holding {in_hand}"),
+                        (MortarState::Done { item, .. }, None) => format!("[RMB] take {item}"),
                         _ => String::new(),
                     }
                 } else {
                     String::new()
                 }
             }
-            (Interactable::PlaceableLocation | Interactable::Discardable, None) => String::new(),
+            _ => String::new(),
         }
     } else {
         String::new()

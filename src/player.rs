@@ -46,7 +46,10 @@ fn spawn_player(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) 
         #Player
         Player
         Inventory {
-            item: Item::Garlic
+            selection: Selection::Item(Item::Garlic {
+                is_washed: false,
+                state: ItemState::Unprocessed,
+            })
         }
         Transform {
             translation: PLAYER_SPAWN_POS
@@ -122,7 +125,7 @@ fn add_pointer(
 }
 
 fn update_pointer_pos(
-    camera: Single<&Camera, Changed<Camera>>,
+    camera: Single<&Camera, (Changed<Camera>, With<Camera3d>)>,
     mut cursor: Single<&mut PointerLocation, With<PlayerCursor>>,
 ) {
     let Some(size) = camera.logical_viewport_size() else {
@@ -215,25 +218,36 @@ fn player_look(
 
 fn update_player_item_preview(
     mut commands: Commands,
-    assets_server: Res<AssetServer>,
+    asset_server: Res<AssetServer>,
     inventory: Single<&Inventory, Changed<Inventory>>,
     right_hand: Single<Entity, With<PlayerRightHand>>,
     children: Query<&Children>,
 ) {
-    if let Some(item) = inventory.item {
-        let scene = item.scene(&assets_server, Vec3::ZERO);
-        commands.entity(*right_hand).apply_scene(bsn! {
-            Children [
+    match inventory.selection.as_ref().cloned() {
+        Some(Selection::Item(item)) => {
+            let scene = item.scene(&asset_server, Vec3::ZERO);
+            commands.entity(*right_hand).apply_scene(bsn! {
+                Children [
+                    @scene
+                ]
+            });
+        }
+        Some(Selection::StickyNote(sticky_note)) => {
+            let scene = sticky_note.scene(&asset_server, Vec3::ZERO, Vec3::Z);
+            commands.entity(*right_hand).apply_scene(bsn! {
+                Children [
                 @scene
             ]
-        });
-    } else {
-        let Ok(children) = children.get(*right_hand) else {
-            return;
-        };
-
-        for child in children {
-            commands.entity(*child).despawn();
+            });
         }
-    }
+        None => {
+            let Ok(children) = children.get(*right_hand) else {
+                return;
+            };
+
+            for child in children {
+                commands.entity(*child).despawn();
+            }
+        }
+    };
 }

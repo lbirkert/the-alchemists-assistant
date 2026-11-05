@@ -112,8 +112,8 @@ fn mortar_interaction(
     }) = messages.read().next()
         && let Ok(mut mortar) = mortars.get_mut(*entity)
     {
-        match (&mortar.state, inventory.item) {
-            (MortarState::Idle, Some(item)) => {
+        match (&mortar.state, inventory.selection.as_ref()) {
+            (MortarState::Idle, Some(Selection::Item(item))) => {
                 let scene = item.scene(&asset_server, Vec3::new(0., 0.2, 0.));
                 let item_entity = commands
                     .spawn_scene(bsn! {
@@ -124,19 +124,19 @@ fn mortar_interaction(
                     .id();
                 mortar.state = MortarState::Processing {
                     working: true,
-                    item,
+                    item: *item,
                     item_entity,
                     timer: Timer::new(Duration::from_millis(2000), TimerMode::Once),
                 };
                 mortar.set_animation = true;
-                inventory.item = None;
+                inventory.selection = None;
             }
             (MortarState::Processing { .. }, _) => {
                 mortar.set_animation = true;
             }
             (MortarState::Done { item, item_entity }, None) => {
                 commands.entity(*item_entity).despawn();
-                inventory.item = Some(*item);
+                inventory.selection = Some(Selection::Item(*item));
                 mortar.state = MortarState::Idle;
                 mortar.set_animation = true;
             }
