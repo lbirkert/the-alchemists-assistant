@@ -108,18 +108,13 @@ fn setup(mut commands: Commands) {
 }
 
 fn update_hud_text(
+    focus: Res<PlayerFocus>,
     inventory: Single<&Inventory>,
-    pointer: Single<&PointerInteraction, With<PlayerCursor>>,
-    interactable_search: Query<(Option<&ChildOf>, Has<Interactable>)>,
-    interactables: Query<&Interactable>,
     drawers: Query<&Drawer>,
     mortars: Query<&ProcessingStation>,
     mut text: Single<&mut Text, With<HudText>>,
 ) {
-    let value = if let Some((mesh_entity, _hit)) = pointer.get_nearest_hit()
-        && let Some(entity) = crate::utils::find_parent(*mesh_entity, &interactable_search)
-        && let Ok(interactable) = interactables.get(entity)
-    {
+    let value = if let Some((entity, interactable)) = focus.interactable {
         match (interactable, inventory.item) {
             (Interactable::Item(item), Some(in_hand)) => {
                 format!("[RMB] Swap {item:?} with {in_hand:?}")
