@@ -62,6 +62,12 @@ pub struct StickyNote {
     pub recipe: Option<Recipe>,
 }
 
+impl std::fmt::Display for StickyNote {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Recipe")
+    }
+}
+
 impl StickyNote {
     // "physics" is not really accurate but it mirrors Item's structure so lets roll with it
     pub fn physics_scene(self, asset_server: &AssetServer, transform: Transform) -> impl Scene {

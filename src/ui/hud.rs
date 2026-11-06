@@ -116,76 +116,70 @@ fn update_hud_text(
     cauldron: Single<&Cauldron>,
 ) {
     let value = if let Some((entity, ref interactable)) = focus.interactable {
-        match (interactable, inventory.selection.as_ref()) {
-            (Interactable::Item(item), Some(Selection::Item(in_hand))) => {
-                format!("[RMB] Swap {item} with {in_hand}")
-            }
-            (Interactable::Item(item) | Interactable::Source { item }, None) => {
-                format!("[RMB] Pick up {item}")
-            }
-            (Interactable::ItemPlaceable, Some(Selection::Item(in_hand))) => {
-                format!("[RMB] Place {in_hand}")
-            }
-            (Interactable::StickyNotePlaceable, Some(Selection::StickyNote(_))) => {
-                String::from("[RMB] Place Sticky Note")
-            }
-            (Interactable::ItemDiscardable, Some(Selection::Item(in_hand))) => {
-                format!("[RMB] Discard {in_hand}")
-            }
-            (
-                Interactable::NpcTable,
-                Some(Selection::Item(Item {
-                    potion:
-                        Some(PotionData {
-                            recipe: Some(..), ..
-                        }),
-                    ..
-                })),
-            ) => {
-                format!("[RMB] Submit Potion - press bell afterwards")
-            }
-            (
-                Interactable::Item(Item {
-                    potion: Some(PotionData { recipe: None, .. }),
-                    ..
-                }),
-                Some(Selection::StickyNote(StickyNote {
-                    recipe: Some(..), ..
-                })),
-            ) => {
-                format!("[RMB] Label potion with Recipe")
-            }
-            (Interactable::Source { .. }, Some(in_hand)) => format!("Already holding {in_hand}"),
-            (
-                Interactable::ItemPlaceable
-                | Interactable::StickyNotePlaceable
-                | Interactable::ItemDiscardable,
-                None,
-            ) => String::new(),
-            (Interactable::Drawer, _) => String::from(match drawers.get(entity) {
-                Ok(Drawer { opened: true, .. }) => "[RMB] Close drawer",
-                Ok(Drawer { opened: false, .. }) => "[RMB] Open drawer",
-                Err(_) => "",
-            }),
-            (Interactable::StickyNote(_), None) => String::from("[RMB] Pick up Sticky Note"),
-            (Interactable::StickyNote(_), Some(in_hand)) => format!("Already holding {in_hand}"),
-            (Interactable::Bell, _) => format!("[RMB] call alchemist"),
-            (
-                Interactable::Cauldron,
+        match interactable {
+            Interactable::Item(item) => match inventory.selection.as_ref() {
+                Some(Selection::Item(in_hand)) => format!("[RMB] Swap {item} with {in_hand}"),
+                Some(Selection::StickyNote(note))
+                    if note.recipe.is_some() && item.potion.is_some() =>
+                {
+                    format!("[RMB] Label {item} with {note}")
+                }
+                Some(Selection::StickyNote(note))
+                    if note.recipe.is_some()
+                        && item.potion.as_ref().is_some_and(|p| p.recipe.is_some()) =>
+                {
+                    format!("{item} already has a recipe")
+                }
+                Some(Selection::StickyNote(_)) => String::new(),
+                None => format!("[RMB] Pick up {item}"),
+            },
+            Interactable::StickyNote(note) => match inventory.selection.as_ref() {
+                Some(in_hand) => format!("Already holding {in_hand}"),
+                None => format!("[RMB] Pick up {note}"),
+            },
+            Interactable::ItemPlaceable => match inventory.selection.as_ref() {
+                Some(Selection::Item(in_hand)) => format!("[RMB] Place {in_hand}"),
+                None | Some(Selection::StickyNote(_)) => String::new(),
+            },
+            Interactable::StickyNotePlaceable => match inventory.selection.as_ref() {
+                Some(Selection::StickyNote(note)) => format!("[RMB] Place {note}"),
+                None | Some(Selection::Item(_)) => String::new(),
+            },
+            Interactable::ItemDiscardable => match inventory.selection.as_ref() {
+                Some(Selection::Item(in_hand)) => format!("[RMB] Discard {in_hand}"),
+                Some(Selection::StickyNote(_)) => {
+                    String::from("This is too important to throw away!")
+                }
+                None => String::new(),
+            },
+            Interactable::NpcTable => match inventory.selection.as_ref() {
+                Some(Selection::Item(item))
+                    if item.potion.as_ref().is_some_and(|p| p.recipe.is_some()) =>
+                {
+                    String::from("[RMB] Submit {item} - press bell afterwards")
+                }
                 Some(Selection::Item(Item {
                     kind: ItemKind::Potion,
                     potion: None,
                     ..
-                })),
-            ) => {
-                if !cauldron.is_empty() {
-                    format!("[RMB] Fill Potion")
-                } else {
-                    String::new()
-                }
-            }
-            (Interactable::Cauldron, Some(Selection::Item(..))) => format!("[RMB] Add to Cauldron"),
-            (Interactable::Station, _) => {
+                })) => String::from("I will place my potion here after I brewed it."),
+                Some(Selection::Item(Item {
+                    potion: Some(PotionData { recipe: None, .. }),
+                    ..
+                })) => String::from("My potion needs a recipe label."),
+                _ => String::new(),
+            },
+            Interactable::Bell => String::from("[RMB] Call alchemist"),
+            Interactable::Source { item } => match inventory.selection.as_ref() {
+                Some(in_hand) => format!("Already holding {in_hand}"),
+                None => format!("[RMB] Take up {item}"),
+            },
+            Interactable::Drawer => String::from(match drawers.get(entity) {
+                Ok(Drawer { opened: true, .. }) => "[RMB] Close drawer",
+                Ok(Drawer { opened: false, .. }) => "[RMB] Open drawer",
+                Err(_) => "",
+            }),
+            Interactable::Station => {
                 if let Ok(station) = mortars.get(entity) {
                     match (&station.state, inventory.selection.as_ref()) {
                         (StationState::Idle, Some(Selection::Item(in_hand))) => {
@@ -219,7 +213,29 @@ fn update_hud_text(
                     String::new()
                 }
             }
-            _ => String::new(),
+            Interactable::Cauldron => match inventory.selection.as_ref() {
+                Some(Selection::Item(item))
+                    if item.kind == ItemKind::Potion && item.potion.is_none() =>
+                {
+                    if cauldron.is_empty() {
+                        String::from("Cauldron is empty")
+                    } else {
+                        String::from("[RMB] Fill Potion")
+                    }
+                }
+                Some(Selection::Item(item)) if item.kind != ItemKind::Potion => {
+                    format!("[RMB] Add {item} to Cauldron")
+                }
+                Some(Selection::Item(item)) => {
+                    debug_assert_eq!(item.kind, ItemKind::Potion);
+                    debug_assert!(item.potion.is_some());
+                    match cauldron.is_empty() {
+                        true => String::new(),
+                        false => format!("[RMB] {item} is already filled"),
+                    }
+                }
+                None | Some(Selection::StickyNote(_)) => String::new(),
+            },
         }
     } else {
         String::new()
