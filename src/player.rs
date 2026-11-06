@@ -149,10 +149,8 @@ fn player_move(
     key_bindings: Res<KeyBindings>,
     mut player_query: Single<(Entity, Forces, Has<IsMoving>), With<Player>>,
     camera_transform: Single<&Transform, With<PlayerEyes>>,
-    time: Res<Time>,
 ) {
     let (entity, forces, has_moving) = &mut *player_query;
-    let velocity = forces.linear_velocity();
     let mut direction = Vec3::ZERO;
 
     let mut speed_modifier = 1.0;

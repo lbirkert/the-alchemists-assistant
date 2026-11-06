@@ -9,7 +9,7 @@
 // Idle: on time > DAY_DURATION -> SayByeToPlayer
 // SayByeToPlayer: on finished -> Idle + set day_ended to true
 
-use bevy::picking::backend::HitData;
+use bevy::{picking::backend::HitData, world_serialization::WorldInstanceReady};
 
 use crate::{
     prelude::*,
@@ -24,15 +24,29 @@ pub fn plugin(app: &mut App) {
             update_idle_npc,
             update_speaking_npc,
             listen_for_bell,
+            update_npc_animation,
+            update_npc_speech_text,
         ),
     );
 }
 
 #[derive(Component, Reflect, Clone, Default)]
 #[reflect(Component)]
+#[component(on_add)]
 pub struct Npc {
     state_start: f32, // state starting time
     state: NpcState,
+}
+
+impl Npc {
+    fn on_add(mut world: DeferredWorld, ctx: HookContext) {
+        let speech = npc_speech_scene(&mut world);
+        world.commands().entity(ctx.entity).apply_scene(bsn! {
+            WorldAssetRoot("Alchemist.glb#Scene0")
+            on(instance_ready_setup_armature)
+            @speech
+        });
+    }
 }
 
 #[derive(Reflect, Clone, Default, Debug)]
@@ -110,8 +124,6 @@ fn update_idle_npc(
 
         npc.state_start = time.elapsed_secs();
         npc.state = NpcState::WalkIntoRoom(WalkIntoRoomReason::BringRecipes(recipes));
-
-        return;
     }
 }
 
@@ -277,4 +289,161 @@ fn walk_npc(transform: &mut Transform, time: &Time, target_pos: Vec3) -> bool {
     transform.translation += movement;
 
     false
+}
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+struct NpcArmature;
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+struct NpcAnimations {
+    idle: AnimationNodeIndex,
+    walk: AnimationNodeIndex,
+}
+
+#[derive(Component, Reflect, Default, Debug, Clone, PartialEq, Eq)]
+#[reflect(Component)]
+enum NpcAnimationState {
+    #[default]
+    Idle,
+    Walking,
+}
+
+fn instance_ready_setup_armature(
+    event: On<WorldInstanceReady>,
+    mut commands: Commands,
+    mut graphs: ResMut<Assets<AnimationGraph>>,
+    asset_server: Res<AssetServer>,
+    armature: Single<Entity, With<NpcArmature>>,
+) {
+    let (graph, animations) = AnimationGraph::from_clips(
+        (0..3).map(|i| asset_server.load(format!("Alchemist.glb#Animation{i}"))),
+    );
+    let graph_handle = graphs.add(graph);
+
+    commands
+        .entity(event.entity)
+        .insert(NpcAnimationState::Idle);
+    commands.entity(*armature).insert((
+        AnimationGraphHandle(graph_handle),
+        AnimationTransitions::new(),
+        NpcAnimations {
+            idle: animations[0],
+            walk: animations[2],
+        },
+    ));
+}
+
+fn update_npc_animation(
+    mut npc: Single<(&mut NpcAnimationState, &Npc), Changed<Npc>>,
+    mut armature: Single<(
+        &NpcAnimations,
+        &mut AnimationPlayer,
+        &mut AnimationTransitions,
+    )>,
+) {
+    let (animation_state, npc) = &mut *npc;
+    let new_animation = match npc.state {
+        NpcState::Idle | NpcState::SpeakingToPlayer(_) => NpcAnimationState::Idle,
+        NpcState::WalkIntoRoom(_) | NpcState::WalkOutOfRoom(_) => NpcAnimationState::Walking,
+    };
+    if new_animation != **animation_state {
+        let (animations, animation_player, animation_transitions) = &mut *armature;
+        let animation = match new_animation {
+            NpcAnimationState::Idle => animations.idle,
+            NpcAnimationState::Walking => animations.walk,
+        };
+        **animation_state = new_animation;
+        animation_transitions
+            .play(animation_player, animation, Duration::from_millis(500))
+            .repeat();
+    }
+}
+
+#[derive(Component, Reflect, Default, Clone)]
+#[reflect(Component)]
+struct NpcSpeechText;
+
+fn npc_speech_scene(world: &mut DeferredWorld) -> impl Scene {
+    // This is the texture that will be rendered to.
+    let image = Image::new_target_texture(
+        512,
+        256,
+        bevy::render::render_resource::TextureFormat::Bgra8UnormSrgb,
+        None,
+    );
+
+    let mut images = world.resource_mut::<Assets<Image>>();
+    let image_handle = images.add(image);
+
+    let texture_camera = world
+        .commands()
+        .spawn((
+            Name::new("Npc speech camera"),
+            Camera2d,
+            Camera {
+                // render before the "main pass" camera
+                order: -1,
+                clear_color: ClearColorConfig::Custom(Color::NONE),
+                ..default()
+            },
+            bevy::camera::RenderTarget::Image(image_handle.clone().into()),
+            DespawnOnExit(GameState::Game),
+        ))
+        .id();
+
+    world.commands().spawn_scene(bsn! {
+        #NpcSpeechNode
+        Node {
+            // Cover the whole image
+            width: percent(100),
+            height: percent(100),
+            flex_direction: FlexDirection::Column,
+            justify_content: JustifyContent::End,
+            align_items: AlignItems::Center,
+        }
+        UiTargetCamera(texture_camera)
+        DespawnOnExit::<GameState>(GameState::Game)
+        Children [
+            #NpcSpeechText
+            Text::new("")
+            TextFont {
+                font_size: px(36),
+                weight: FontWeight::EXTRA_BOLD
+            }
+            NpcSpeechText
+        ]
+    });
+
+    let mut meshes = world.resource_mut::<Assets<Mesh>>();
+    let mesh_handle = meshes.add(Plane3d::new(Vec3::Z, Vec2::new(2., 1.)));
+
+    let mut materials = world.resource_mut::<Assets<StandardMaterial>>();
+    let material_handle = materials.add(StandardMaterial {
+        base_color_texture: Some(image_handle),
+        alpha_mode: AlphaMode::Blend,
+        unlit: true,
+        ..default()
+    });
+
+    bsn! {
+        Children [
+            Mesh3d(mesh_handle)
+            MeshMaterial3d::<StandardMaterial>(material_handle)
+            Transform::from_xyz(0., 3.8, 0.)
+        ]
+    }
+}
+
+fn update_npc_speech_text(
+    mut text: Single<&mut Text, With<NpcSpeechText>>,
+    npc: Single<&Npc, Changed<Npc>>,
+) {
+    text.0 = match &npc.state {
+        NpcState::SpeakingToPlayer(MessageToPlayer::Hello(msg) | MessageToPlayer::Bye(msg)) => {
+            msg.clone()
+        }
+        _ => String::new(),
+    };
 }
