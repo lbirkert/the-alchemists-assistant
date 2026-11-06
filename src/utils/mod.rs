@@ -2,7 +2,7 @@ use crate::prelude::*;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(GameUpdate, remove_meshes);
+    app.add_systems(GameUpdate, (remove_meshes, billboard));
 }
 
 #[derive(Component, Reflect)]
@@ -50,4 +50,20 @@ pub fn items_to_color(items: &Vec<Item>) -> Color {
     let hue = ((hash / 256) % 256) as f32;
 
     Color::hsv(hue, 1.0, 1.0)
+}
+
+#[derive(Component, Reflect, Default, Clone)]
+#[reflect(Component)]
+pub struct Billboarded;
+
+fn billboard(
+    query: Query<&mut Transform, (With<Billboarded>, Without<Camera3d>)>,
+    camera: Single<&Transform, With<Camera3d>>,
+) {
+    for mut transform in query {
+        transform.rotation = Quat::from_rotation_arc(
+            Vec3::NEG_Z,
+            camera.forward().as_vec3().with_y(0.).normalize_or_zero(),
+        );
+    }
 }

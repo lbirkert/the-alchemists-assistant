@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use bevy::audio::Volume;
+
 use crate::{prelude::*, sounds::audio_scene};
 
 pub(super) fn plugin(app: &mut App) {
@@ -10,13 +12,24 @@ pub(super) fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct IsMoving {
     timer: Timer,
+    volume: Volume,
 }
 
 impl Default for IsMoving {
     fn default() -> Self {
         let mut timer = Timer::new(Duration::from_millis(420), TimerMode::Repeating);
         timer.almost_finish();
-        Self { timer }
+        Self {
+            timer,
+            volume: Volume::Linear(1.),
+        }
+    }
+}
+
+impl IsMoving {
+    pub fn with_volume(mut self, linear: f32) -> Self {
+        self.volume = Volume::Linear(linear);
+        self
     }
 }
 
@@ -28,7 +41,12 @@ fn play_movement_sound(
     for (entity, mut moving) in moving {
         moving.timer.tick(time.delta());
         if moving.timer.is_finished() {
-            commands.spawn_scene(audio_scene(entity, &AUDIO_SOURCES));
+            commands.spawn_scene(bsn! {
+                @audio_scene(entity, &AUDIO_SOURCES)
+                PlaybackSettings {
+                    volume: {moving.volume}
+                }
+            });
         }
     }
 }

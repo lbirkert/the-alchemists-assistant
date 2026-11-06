@@ -14,6 +14,8 @@ use bevy::{picking::backend::HitData, world_serialization::WorldInstanceReady};
 use crate::{
     prelude::*,
     scene::{NpcStickyNotes, NpcTable},
+    sounds::movement::IsMoving,
+    utils::Billboarded,
 };
 
 pub fn plugin(app: &mut App) {
@@ -44,6 +46,7 @@ impl Npc {
         world.commands().entity(ctx.entity).apply_scene(bsn! {
             WorldAssetRoot("Alchemist.glb#Scene0")
             on(instance_ready_setup_armature)
+            on(instance_ready_find_target_positions)
             @speech
         });
     }
@@ -159,7 +162,7 @@ fn update_walking_npc(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut manager: Single<&mut GameManager>,
-    mut npc_query: Single<(&mut Transform, &mut Npc)>,
+    mut npc_query: Single<(&mut Transform, &mut Npc, &NpcTargetPositions)>,
     mut npc_table: Single<&mut NpcTable>,
     npc_sticky_notes: Single<Entity, With<NpcStickyNotes>>,
     time: Res<Time>,
@@ -169,12 +172,14 @@ fn update_walking_npc(
         return;
     }
 
-    let (ref mut transform, ref mut npc) = *npc_query;
+    let (ref mut transform, ref mut npc, target_positions) = *npc_query;
 
     let target_pos = match npc.state {
-        NpcState::WalkIntoRoom(WalkIntoRoomReason::SayToPlayer(..)) => Vec3::new(0.0, 0.0, 3.0),
-        NpcState::WalkIntoRoom(..) => Vec3::new(0.0, 0.0, 10.0),
-        NpcState::WalkOutOfRoom(..) => Vec3::new(0.0, 0.0, -5.0),
+        NpcState::WalkIntoRoom(WalkIntoRoomReason::SayToPlayer(..)) => {
+            target_positions.inside_speak
+        }
+        NpcState::WalkIntoRoom(..) => target_positions.inside_interact,
+        NpcState::WalkOutOfRoom(..) => target_positions.outside,
         _ => return,
     };
 
@@ -277,7 +282,7 @@ fn update_speaking_npc(manager: Single<&GameManager>, mut npc: Single<&mut Npc>,
 }
 
 fn walk_npc(transform: &mut Transform, time: &Time, target_pos: Vec3) -> bool {
-    const NPC_SPEED: f32 = 5.0;
+    const NPC_SPEED: f32 = 2.0;
 
     let delta = target_pos - transform.translation;
     if delta.length_squared() < 1e-3 {
@@ -289,6 +294,57 @@ fn walk_npc(transform: &mut Transform, time: &Time, target_pos: Vec3) -> bool {
     transform.translation += movement;
 
     false
+}
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+struct NpcPosOutside;
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+struct NpcPosInsideSpeakToPlayer;
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+struct NpcPosInsideInteractWithTable;
+
+#[derive(Component, Reflect, Default, Debug, Clone)]
+#[reflect(Component)]
+struct NpcTargetPositions {
+    outside: Vec3,
+    inside_speak: Vec3,
+    inside_interact: Vec3,
+}
+
+fn instance_ready_find_target_positions(
+    event: On<WorldInstanceReady>,
+    mut commands: Commands,
+    npc_pos_outside: Option<Single<(Entity, &Transform), With<NpcPosOutside>>>,
+    npc_pos_speak: Option<Single<(Entity, &Transform), With<NpcPosInsideSpeakToPlayer>>>,
+    npc_pos_interact: Option<Single<(Entity, &Transform), With<NpcPosInsideInteractWithTable>>>,
+) {
+    let Some((e1, outside)) = npc_pos_outside.as_deref() else {
+        error!("Failed to find NpcPosOutside");
+        return;
+    };
+    let Some((e2, speak)) = npc_pos_speak.as_deref() else {
+        error!("Failed to find NpcPosInsideSpeakToPlayer");
+        return;
+    };
+    let Some((e3, interact)) = npc_pos_interact.as_deref() else {
+        error!("Failed to find NpcPosInsideInteractWithTable");
+        return;
+    };
+
+    commands.entity(*e1).despawn();
+    commands.entity(*e2).despawn();
+    commands.entity(*e3).despawn();
+
+    commands.entity(event.entity).insert(NpcTargetPositions {
+        outside: outside.translation,
+        inside_speak: speak.translation,
+        inside_interact: interact.translation,
+    });
 }
 
 #[derive(Component, Reflect, Default)]
@@ -336,27 +392,37 @@ fn instance_ready_setup_armature(
 }
 
 fn update_npc_animation(
-    mut npc: Single<(&mut NpcAnimationState, &Npc), Changed<Npc>>,
+    mut commands: Commands,
+    mut npc: Single<(Entity, &mut NpcAnimationState, &Npc), Changed<Npc>>,
     mut armature: Single<(
         &NpcAnimations,
         &mut AnimationPlayer,
         &mut AnimationTransitions,
     )>,
 ) {
-    let (animation_state, npc) = &mut *npc;
+    let (entity, animation_state, npc) = &mut *npc;
     let new_animation = match npc.state {
         NpcState::Idle | NpcState::SpeakingToPlayer(_) => NpcAnimationState::Idle,
         NpcState::WalkIntoRoom(_) | NpcState::WalkOutOfRoom(_) => NpcAnimationState::Walking,
     };
     if new_animation != **animation_state {
         let (animations, animation_player, animation_transitions) = &mut *armature;
-        let animation = match new_animation {
-            NpcAnimationState::Idle => animations.idle,
-            NpcAnimationState::Walking => animations.walk,
+        let (animation, speed) = match new_animation {
+            NpcAnimationState::Idle => {
+                commands.entity(*entity).remove::<IsMoving>();
+                (animations.idle, 1.)
+            }
+            NpcAnimationState::Walking => {
+                commands
+                    .entity(*entity)
+                    .insert(IsMoving::default().with_volume(3.));
+                (animations.walk, 2.)
+            }
         };
         **animation_state = new_animation;
         animation_transitions
-            .play(animation_player, animation, Duration::from_millis(500))
+            .play(animation_player, animation, Duration::from_millis(150))
+            .set_speed(speed)
             .repeat();
     }
 }
@@ -431,6 +497,7 @@ fn npc_speech_scene(world: &mut DeferredWorld) -> impl Scene {
         Children [
             Mesh3d(mesh_handle)
             MeshMaterial3d::<StandardMaterial>(material_handle)
+            Billboarded
             Transform::from_xyz(0., 3.8, 0.)
         ]
     }
