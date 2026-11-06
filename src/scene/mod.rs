@@ -99,12 +99,6 @@ fn spawn_scene(mut commands: Commands) {
         WorldAssetRoot("TheAlchemistsAssistant.glb#Scene0")
         DespawnOnExit<GameState>(GameState::Game)
     });
-    commands.spawn_scene(bsn! {
-        #Alchemist
-        WorldAssetRoot("Alchemist.glb#Scene0")
-        Transform::from_xyz(1., 0., 2.)
-        DespawnOnExit<GameState>(GameState::Game)
-    });
 
     commands.insert_resource(GlobalAmbientLight {
         color: Color::srgba(1.0, 1.0, 0.8, 1.0),

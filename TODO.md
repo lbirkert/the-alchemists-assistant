@@ -1,0 +1,10 @@
+- Npc message UI
+- Clock animation
+- Restrict recipes to unlocked recipes/stations
+- Score board
+- Water tap functionality
+- Intro  cutscene
+- Ending screen
+- Credits
+- Cauldron stirring
+- change station item at the end
