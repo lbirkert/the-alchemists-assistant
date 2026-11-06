@@ -57,27 +57,28 @@ impl NoteMaterial {
 #[derive(Component, Reflect, Default, Debug, Clone, Eq, PartialEq, Hash)]
 #[reflect(Component)]
 #[reflect(Default)]
-#[component(on_add)]
 pub struct StickyNote {
     pub text: String,
     pub recipe: Option<Recipe>,
 }
 
 impl StickyNote {
-    fn on_add(mut world: DeferredWorld, ctx: HookContext) {
-        let this = world.get::<Self>(ctx.entity).unwrap().clone();
-        world
-            .commands()
-            .entity(ctx.entity)
-            .insert(Interactable::StickyNote(this));
+    // "physics" is not really accurate but it mirrors Item's structure so lets roll with it
+    pub fn physics_scene(self, asset_server: &AssetServer, transform: Transform) -> impl Scene {
+        let scene = self.clone().scene(asset_server, transform);
+        bsn! {
+            Interactable::StickyNote({self})
+            @scene
+        }
     }
 
-    pub fn scene(self, asset_server: &AssetServer, pos: Vec3, rot: Quat) -> impl Scene {
+    pub fn scene(self, asset_server: &AssetServer, transform: Transform) -> impl Scene {
         let scene = asset_server.load("StickyNotes.glb#Scene0");
+
         bsn! {
             #StickyNote
             WorldAssetRoot(scene)
-            Transform::from_translation(pos).with_rotation(rot)
+            transform
             self
         }
     }
@@ -144,7 +145,10 @@ fn place_sticky_note(
         return;
     };
     let rotation = Transform::IDENTITY.looking_to(*normal, Vec3::Y).rotation;
-    let scene = sticky_note.scene(&asset_server, *position, rotation);
+    let scene = sticky_note.physics_scene(
+        &asset_server,
+        Transform::from_translation(*position).with_rotation(rotation),
+    );
     commands.spawn_scene(scene);
 }
 
