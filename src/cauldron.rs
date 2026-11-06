@@ -19,6 +19,10 @@ impl Cauldron {
     pub fn color(&self) -> Color {
         crate::utils::items_to_color(&self.items)
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.items.is_empty()
+    }
 }
 
 fn add_item_to_cauldron(

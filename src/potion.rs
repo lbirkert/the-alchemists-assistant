@@ -44,6 +44,10 @@ fn fill_potion(
         return;
     };
 
+    if cauldron.is_empty() {
+        return;
+    }
+
     if !matches!(
         inventory.selection,
         Some(Selection::Item(Item {

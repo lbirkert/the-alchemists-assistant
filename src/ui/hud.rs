@@ -113,6 +113,7 @@ fn update_hud_text(
     drawers: Query<&Drawer>,
     mortars: Query<&ProcessingStation>,
     mut text: Single<&mut Text, With<HudText>>,
+    cauldron: Single<&Cauldron>,
 ) {
     let value = if let Some((entity, ref interactable)) = focus.interactable {
         match (interactable, inventory.selection.as_ref()) {
@@ -176,7 +177,13 @@ fn update_hud_text(
                     potion: None,
                     ..
                 })),
-            ) => format!("[RMB] Fill Potion"),
+            ) => {
+                if !cauldron.is_empty() {
+                    format!("[RMB] Fill Potion")
+                } else {
+                    String::new()
+                }
+            }
             (Interactable::Cauldron, Some(Selection::Item(..))) => format!("[RMB] Add to Cauldron"),
             (Interactable::Station, _) => {
                 if let Ok(station) = mortars.get(entity) {
