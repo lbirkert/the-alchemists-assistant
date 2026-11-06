@@ -12,7 +12,9 @@
 use bevy::{picking::backend::HitData, world_serialization::WorldInstanceReady};
 
 use crate::{
+    manager::DayState,
     prelude::*,
+    recipe::GREETINGS,
     scene::{NpcStickyNotes, NpcTable},
     sounds::movement::IsMoving,
     utils::Billboarded,
@@ -47,6 +49,15 @@ impl Npc {
             WorldAssetRoot("Alchemist.glb#Scene0")
             on(instance_ready_setup_armature)
             on(instance_ready_find_target_positions)
+            // We can't insert the collider directly, else avians ColliderFromMesh will break.
+            on(|event: On<WorldInstanceReady>, mut commands: Commands| {
+                commands.spawn((
+                    ChildOf(event.entity),
+                    Transform::from_xyz(0., 1., 0.),
+                    RigidBody::Kinematic,
+                    Collider::capsule(0.5, 2.),
+                ));
+            })
             @speech
         });
     }
@@ -87,47 +98,53 @@ fn update_idle_npc(
     mut npc: Single<&mut Npc>,
     time: Res<Time>,
 ) {
-    if manager.has_day_ended {
-        // TODO: add a day running state maybe?
-        return;
-    }
-
     if !matches!(npc.state, NpcState::Idle) {
         return;
     }
 
-    if manager.should_end_day() {
-        npc.state_start = time.elapsed_secs();
-        npc.state = NpcState::WalkIntoRoom(WalkIntoRoomReason::SayToPlayer(MessageToPlayer::Bye(
-            "Bye Brotha".to_string(),
-        )));
-        // TODO: proper messages
-
-        return;
-    }
-
-    if manager.should_greet() {
-        manager.has_npc_greeted = true;
-        npc.state_start = time.elapsed_secs();
-        npc.state = NpcState::WalkIntoRoom(WalkIntoRoomReason::SayToPlayer(
-            MessageToPlayer::Hello("Hello There!".to_string()),
-        ));
-        // TODO: proper messages
-
-        return;
-    }
-
-    if manager.should_bring_recipe() {
-        // collect all recipes at once so you don't have to walk so much
-        let mut recipes = Vec::new();
-        while manager.should_bring_recipe() {
-            let recipe = Recipe::generate(&upgrades);
-            manager.recipes.push(recipe.clone());
-            recipes.push(recipe);
+    match manager.day_state {
+        DayState::Started => {
+            let mut rng = rand::rng();
+            npc.state = NpcState::WalkIntoRoom(WalkIntoRoomReason::SayToPlayer(
+                MessageToPlayer::Hello(GREETINGS.choose(&mut rng).unwrap().to_string()),
+            ));
+            manager.day_state = DayState::Running;
         }
+        DayState::Running => {
+            if manager.should_end_day() {
+                info!("It is {} o´clock, ending day", manager.game_hour());
+                npc.state_start = time.elapsed_secs();
+                npc.state =
+                    NpcState::WalkIntoRoom(WalkIntoRoomReason::SayToPlayer(MessageToPlayer::Bye(
+                        "It is evening already.\n\
+                        I will go to sleep now.\n\
+                        You should too."
+                            .to_string(),
+                    )));
+                // TODO: proper messages
 
-        npc.state_start = time.elapsed_secs();
-        npc.state = NpcState::WalkIntoRoom(WalkIntoRoomReason::BringRecipes(recipes));
+                return;
+            }
+
+            if manager.should_bring_recipe() {
+                // collect all recipes at once so you don't have to walk so much
+                let mut recipes = Vec::new();
+                while manager.should_bring_recipe() {
+                    let recipe = Recipe::generate(&upgrades);
+                    manager.recipes.push(recipe.clone());
+                    recipes.push(recipe);
+                }
+
+                npc.state_start = time.elapsed_secs();
+                npc.state = NpcState::WalkIntoRoom(WalkIntoRoomReason::BringRecipes(recipes));
+            }
+        }
+        DayState::Ended => {
+            if manager.should_start_day() {
+                info!("It is {} o´clock, starting new day", manager.game_hour());
+                manager.day_state = DayState::Started;
+            }
+        }
     }
 }
 
@@ -137,8 +154,7 @@ fn listen_for_bell(
     manager: Single<&GameManager>,
     time: Res<Time>,
 ) {
-    if manager.has_day_ended {
-        // TODO: add a day running state maybe?
+    if manager.day_state != DayState::Running {
         return;
     }
 
@@ -168,8 +184,7 @@ fn update_walking_npc(
     npc_sticky_notes: Single<Entity, With<NpcStickyNotes>>,
     time: Res<Time>,
 ) {
-    if manager.has_day_ended {
-        // TODO: add a day running state maybe?
+    if manager.day_state == DayState::Ended {
         return;
     }
 
@@ -184,7 +199,8 @@ fn update_walking_npc(
         _ => return,
     };
 
-    if !walk_npc(transform, &time, target_pos) {
+    let has_reached_target = walk_npc(transform, &time, target_pos);
+    if !has_reached_target {
         return;
     }
 
@@ -246,7 +262,7 @@ fn update_walking_npc(
             }
             WalkOutOfRoomReason::SayToPlayer(msg) => {
                 if matches!(msg, MessageToPlayer::Bye(_)) {
-                    manager.has_day_ended = true;
+                    manager.day_state = DayState::Ended;
                 }
 
                 NpcState::Idle
@@ -257,8 +273,7 @@ fn update_walking_npc(
 }
 
 fn update_speaking_npc(manager: Single<&GameManager>, mut npc: Single<&mut Npc>, time: Res<Time>) {
-    if manager.has_day_ended {
-        // TODO: add a day running state maybe?
+    if manager.day_state == DayState::Ended {
         return;
     }
 
@@ -266,12 +281,17 @@ fn update_speaking_npc(manager: Single<&GameManager>, mut npc: Single<&mut Npc>,
         return;
     };
 
-    // TODO: how do we do the rendering?
-
-    let duration = match msg {
-        MessageToPlayer::Hello(_) => 5.0,
-        MessageToPlayer::Bye(_) => 10.0,
+    let mut duration = match msg {
+        MessageToPlayer::Hello(msg) | MessageToPlayer::Bye(msg) => {
+            // Set speaking duration based on spoken words.
+            3. + msg.split_whitespace().count() as f32 * 0.5
+        }
     };
+    if let MessageToPlayer::Bye(_) = msg {
+        // Show bye messages always longer.
+        duration *= 2.;
+    }
+    duration = duration.min(20.);
 
     let now = time.elapsed_secs();
     if now - npc.state_start <= duration {
@@ -435,8 +455,8 @@ struct NpcSpeechText;
 fn npc_speech_scene(world: &mut DeferredWorld) -> impl Scene {
     // This is the texture that will be rendered to.
     let image = Image::new_target_texture(
+        1024,
         512,
-        256,
         bevy::render::render_resource::TextureFormat::Bgra8UnormSrgb,
         None,
     );
@@ -476,7 +496,7 @@ fn npc_speech_scene(world: &mut DeferredWorld) -> impl Scene {
             #NpcSpeechText
             Text::new("")
             TextFont {
-                font_size: px(36),
+                font_size: px(32),
                 weight: FontWeight::EXTRA_BOLD
             }
             NpcSpeechText

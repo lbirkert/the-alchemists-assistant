@@ -21,10 +21,9 @@ enum NameGender {
 }
 
 pub const GREETINGS: [&str; 3] = [
-    "Good Morning Greg. I've already prepared everything. Now get to work!",
-    "Howdy My Friend. Feeling Good huh...? Yes? Get to work then!",
-    "Hello Greg. I hope your morning was better than mine... No? Life goes on Anyways, just get to work!",
-    // TODO
+    "Good Morning Greg.\nI've already prepared everything.\nNow get to work!",
+    "Howdy My Friend.\nFeeling Good huh...?\nYes?\nGet to work then!",
+    "Hello Greg.\nI hope your morning was better than mine...\nNo?\nLife goes on Anyways, just get to work!",
 ];
 
 const NAMES: [(NameGender, &str); 10] = [

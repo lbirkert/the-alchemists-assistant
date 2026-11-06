@@ -170,8 +170,7 @@ impl Item {
             LinearVelocity(vel)
             Collider::cuboid(1.0, 1.0, 1.0)
             @scene
-            Interactable::Item({self.clone()})
-            self
+            Interactable::Item({self})
         }
     }
 
