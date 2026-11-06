@@ -2,13 +2,23 @@ use crate::prelude::*;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(GameUpdate, add_item_to_cauldron);
+    app.add_systems(GamePostUpdate, update_cauldron_color);
 }
 
 #[derive(Component, Reflect, Clone)]
 #[reflect(Component)]
-#[require(Interactable::Cauldron)]
+#[require(Interactable::Cauldron, LiquidController {
+    is_visible: false,
+    color: Color::srgb(1.0, 0.0, 0.0),
+})]
 pub struct Cauldron {
     pub items: Vec<Item>,
+}
+
+impl Cauldron {
+    pub fn color(&self) -> Color {
+        crate::utils::items_to_color(&self.items)
+    }
 }
 
 fn add_item_to_cauldron(
@@ -42,4 +52,12 @@ fn add_item_to_cauldron(
     };
 
     cauldron.items.push(item);
+}
+
+fn update_cauldron_color(mut query: Single<(&mut LiquidController, &Cauldron), Changed<Cauldron>>) {
+    let (ref mut liquid_controller, ref mut cauldron) = *query;
+
+    // update liquid color
+    liquid_controller.is_visible = !cauldron.items.is_empty();
+    liquid_controller.color = cauldron.color();
 }

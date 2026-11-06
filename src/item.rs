@@ -3,11 +3,10 @@ use bevy::picking::backend::HitData;
 use crate::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(GameUpdate, pickup_item);
+    app.add_systems(GameUpdate, (pickup_item, update_recipe_for_potion).chain());
     app.add_systems(GameUpdate, pickup_item_from_source);
     app.add_systems(GameUpdate, place_item);
     app.add_systems(GameUpdate, discard_item);
-    app.add_systems(GameUpdate, add_recipe_to_potion);
 }
 
 pub const ITEM_SIZE: f32 = 0.3;
@@ -45,10 +44,12 @@ impl ItemSource {
 #[derive(Component, Reflect, Debug, Default, Clone, PartialEq, Eq, Hash)]
 #[reflect(Component)]
 #[reflect(Default)]
+#[component(on_add)]
 pub struct Item {
     pub kind: ItemKind,
     pub state: ItemState,
     pub is_washed: bool,
+    pub potion: Option<PotionData>,
 }
 
 #[derive(Component, Reflect, EnumIter, Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
@@ -59,6 +60,7 @@ pub enum ItemKind {
     Crystal,
     Grass,
     Flowers,
+    Potion,
 }
 
 #[derive(Reflect, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -80,6 +82,7 @@ impl std::fmt::Display for ItemKind {
                 Self::Crystal => "Crystal",
                 Self::Grass => "Grass",
                 Self::Flowers => "Flowers",
+                Self::Potion => "Potion",
             }
         )
     }
@@ -92,6 +95,24 @@ impl std::fmt::Display for Item {
 }
 
 impl Item {
+    fn on_add(mut world: DeferredWorld, context: HookContext) {
+        let entity = context.entity;
+
+        if let Some(Item {
+            kind: ItemKind::Potion,
+            potion,
+            ..
+        }) = world.get::<Item>(entity)
+        {
+            let color = potion.as_ref().map(|p| p.color()).unwrap_or(Color::BLACK);
+            let is_visible = potion.is_some();
+            world
+                .commands()
+                .entity(entity)
+                .insert(LiquidController { color, is_visible });
+        }
+    }
+
     fn name_prefix(&self) -> String {
         match (self.is_washed, self.state) {
             (false, ItemState::Unprocessed) => format!(""),
@@ -115,6 +136,7 @@ impl Item {
             },
             ItemKind::Grass => "Grass.glb",
             ItemKind::Flowers => "Flowers.glb",
+            ItemKind::Potion => "Potion.glb",
             ItemKind::Crystal => match self.state {
                 ItemState::Unprocessed => "Crystal.glb",
                 ItemState::Grinded => "GrindedCrystal.glb",
@@ -173,22 +195,39 @@ impl Item {
         self
     }
 }
+fn pickup_item_from_source(
+    mut messages: MessageReader<PlayerInteraction>,
+    mut inventory: Single<&mut Inventory>,
+) {
+    let Some(PlayerInteraction {
+        kind: Interactable::Source { item: source },
+        ..
+    }) = messages.read().next()
+    else {
+        return;
+    };
 
-fn add_recipe_to_potion(
+    if inventory.selection.is_some() {
+        return;
+    }
+
+    inventory.selection = Some(Selection::Item(source.clone()));
+}
+
+fn update_recipe_for_potion(
     asset_server: Res<AssetServer>,
     mut commands: Commands,
     items: Query<(Entity, &Item), Changed<Item>>,
     sticky_notes: Query<(Entity, &ChildOf), With<StickyNote>>,
 ) {
     for (entity, item) in &items {
-        // Remove the existing sticky note.
+        // Remove existing sticky notes
         for (note_entity, child_of) in &sticky_notes {
             if child_of.parent() == entity {
                 commands.entity(note_entity).despawn();
             }
         }
 
-        // Create the updated sticky note.
         let Some(PotionData {
             recipe: Some(ref recipe),
             ..
@@ -213,25 +252,6 @@ fn add_recipe_to_potion(
             ChildOf(entity)
         });
     }
-}
-
-fn pickup_item_from_source(
-    mut messages: MessageReader<PlayerInteraction>,
-    mut inventory: Single<&mut Inventory>,
-) {
-    let Some(PlayerInteraction {
-        kind: Interactable::Source { item: source },
-        ..
-    }) = messages.read().next()
-    else {
-        return;
-    };
-
-    if inventory.selection.is_some() {
-        return;
-    }
-
-    inventory.selection = Some(Selection::Item(source.clone()));
 }
 
 fn pickup_item(
@@ -260,6 +280,7 @@ fn pickup_item(
             let item_scene = old_item.physics_scene(&assets_server, *item_transform, Vec3::ZERO);
             commands.spawn_scene(item_scene);
         }
+        info!("destroy item!");
         // destroy old item
         commands.entity(*entity).despawn();
     }

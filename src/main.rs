@@ -8,6 +8,7 @@ mod game_layer;
 mod interaction;
 mod inventory;
 mod item;
+mod liquid;
 mod manager;
 mod npc;
 mod player;
@@ -65,6 +66,7 @@ pub fn main() -> AppExit {
         npc::plugin,
         potion::plugin,
         cauldron::plugin,
+        liquid::plugin,
     ));
 
     app.run()

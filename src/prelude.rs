@@ -5,6 +5,7 @@ pub use crate::game_layer::GameLayer;
 pub use crate::interaction::{Interactable, PlayerFocus, PlayerInteraction};
 pub use crate::inventory::{Inventory, Selection};
 pub use crate::item::{Item, ItemDiscardable, ItemKind, ItemPlaceable, ItemState};
+pub use crate::liquid::LiquidController;
 pub use crate::player::PlayerCursor;
 pub use crate::potion::PotionData;
 pub use crate::recipe::Recipe;

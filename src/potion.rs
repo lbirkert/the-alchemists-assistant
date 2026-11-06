@@ -3,86 +3,9 @@ use bevy::picking::backend::HitData;
 use crate::{item::ITEM_SIZE, prelude::*, scene::NpcTable};
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(GamePostUpdate, set_potion_liquid_material);
     app.add_systems(GameUpdate, fill_potion);
     app.add_systems(GameUpdate, label_potion);
     app.add_systems(GameUpdate, submit_potion);
-}
-
-#[derive(Component, Reflect, Clone, Debug)]
-#[reflect(Component)]
-#[require(Interactable::Potion)]
-pub struct Potion {
-    pub data: Option<PotionData>,
-}
-
-#[derive(Component, Reflect, Clone, Debug)]
-#[reflect(Component)]
-#[component(on_remove)]
-pub struct PotionLiquid {
-    material_handle: Option<Handle<StandardMaterial>>,
-}
-
-impl PotionLiquid {
-    fn on_remove(mut world: DeferredWorld, context: HookContext) {
-        let Some(potion_liquid) = world.get::<PotionLiquid>(context.entity).cloned() else {
-            return;
-        };
-
-        let mut commands = world.commands();
-
-        if let Some(material) = potion_liquid.material_handle {
-            commands.queue(move |world: &mut World| {
-                world
-                    .resource_mut::<Assets<StandardMaterial>>()
-                    .remove(material.id());
-            });
-        }
-    }
-}
-
-fn set_potion_liquid_material(
-    mut commands: Commands,
-    mut potion_liquids: Query<(Entity, &mut PotionLiquid)>,
-    items: Query<&Item>,
-    hierarchy: Query<(Option<&ChildOf>, Has<Item>)>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    for (entity, mut potion_liquid) in &mut potion_liquids {
-        if potion_liquid.material_handle.is_some() {
-            continue;
-        }
-
-        let Some(item_entity) = crate::utils::find_parent::<Item>(entity, &hierarchy) else {
-            continue;
-        };
-
-        let Ok(item) = items.get(item_entity) else {
-            continue;
-        };
-
-        match item.potion {
-            None => {
-                commands.queue(move |world: &mut World| {
-                    if let Ok(mut entity) = world.get_entity_mut(entity) {
-                        entity.insert(Visibility::Hidden);
-                    }
-                });
-            }
-            Some(ref potion) => {
-                let material_handle = materials.add(StandardMaterial {
-                    base_color: potion.color(),
-                    ..default()
-                });
-
-                potion_liquid.material_handle = Some(material_handle.clone());
-
-                commands
-                    .entity(entity)
-                    .insert(MeshMaterial3d(material_handle));
-            }
-        }
-    }
 }
 
 // a potion crafted by a user that might have a sticky note attached
@@ -104,7 +27,7 @@ impl PotionData {
     }
 
     pub fn color(&self) -> Color {
-        Color::srgb(1.0, 0.0, 0.0)
+        crate::utils::items_to_color(&self.items)
     }
 }
 
@@ -145,7 +68,6 @@ fn fill_potion(
 }
 
 fn label_potion(
-    asset_server: Res<AssetServer>,
     mut commands: Commands,
     mut messages: MessageReader<PlayerInteraction>,
     mut inventory: Single<&mut Inventory>,
