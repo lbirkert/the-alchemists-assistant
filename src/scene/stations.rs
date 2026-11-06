@@ -29,8 +29,6 @@ pub enum StationState {
     Idle,
     Processing {
         working: bool,
-        /// Halfway through the process, the item will be replaced by it's target state.
-        transformed: bool,
         item: Item,
         item_entity: Entity,
         timer: Timer,
@@ -216,7 +214,6 @@ fn station_interaction(
                     .id();
                 station.state = StationState::Processing {
                     working: true,
-                    transformed: false,
                     item: item.clone(),
                     item_entity,
                     timer: Timer::new(Duration::from_millis(2000), TimerMode::Once),
@@ -277,7 +274,6 @@ fn update_station(
             StationState::Idle => {}
             StationState::Processing {
                 working,
-                transformed,
                 item,
                 item_entity,
                 timer,
@@ -287,8 +283,7 @@ fn update_station(
                 {
                     *working = true;
                     timer.tick(time.delta());
-                    if timer.fraction() > 0.5 && !*transformed {
-                        *transformed = true;
+                    if timer.just_finished() {
                         let output_item = station_kind.process_item(item.clone());
                         commands.entity(*item_entity).despawn();
                         let scene = output_item.scene(
@@ -302,13 +297,10 @@ fn update_station(
                                 @scene
                             })
                             .id();
-                        *item_entity = new_item_entity;
-                    }
-                    if timer.just_finished() {
                         statistics.process_item(item.clone());
                         station.state = StationState::Done {
                             item: item.clone(),
-                            item_entity: *item_entity,
+                            item_entity: new_item_entity,
                         };
                         station.set_animation = true;
                     }

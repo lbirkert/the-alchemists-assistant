@@ -1,10 +1,23 @@
-- Npc message UI
-- Clock animation
-- Restrict recipes to unlocked recipes/stations
-- Score board
-- Water tap functionality
-- Intro  cutscene
-- Ending screen
-- Credits
-- Cauldron stirring
-- change station item at the end
+# Priority
+- [ ] Restrict recipes to unlocked recipes/stations
+- [ ] Score board
+- [ ] Intro  cutscene
+- [ ] Ending screen
+- [ ] Title screen background scene
+- [ ] Credits
+- [ ] Add sliced flower model
+- [ ] Add grass source
+
+# Nice-To-Have
+- [ ] Refine NPC message UI
+- [ ] Clock animation
+- [ ] Water tap functionality
+- [ ] Cauldron stirring
+- [ ] Cauldron visuals / audio
+- [ ] Extra animation for mortar stomping
+- [ ] Settings
+- [ ] Music
+- [ ] Change sliced garlic model to fit into mortar.
+
+## Done
+- [x] change station item at the end
