@@ -89,16 +89,18 @@ impl Default for GameUpgrades {
         let items = ItemKind::iter()
             .map(|item| {
                 (
-                    item,
+                    item.clone(),
                     match item {
                         ItemKind::Garlic => UpgradeState::UnlockedByDefault,
                         ItemKind::Flowers => UpgradeState::UnlockedByDefault,
+                        ItemKind::Potion => UpgradeState::UnlockedByDefault,
                         ItemKind::Grass => UpgradeState::Locked {
                             requirements: vec![UnlockCondition::item(
                                 Item {
                                     kind: ItemKind::Flowers,
                                     state: ItemState::Grinded,
                                     is_washed: false,
+                                    potion: None,
                                 },
                                 3,
                             )],
@@ -166,7 +168,7 @@ fn check_upgrade_requirements(
             && requirements.iter().all(|r| r.is_satisfied(&statistics))
         {
             *state = UpgradeState::Unlocked;
-            unlock_messages.write(NewUnlock::Item(*item));
+            unlock_messages.write(NewUnlock::Item(item.clone()));
         }
     }
 

@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use std::hash::{DefaultHasher, Hash, Hasher};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(GameUpdate, remove_meshes);
@@ -38,4 +39,15 @@ pub fn find_parent<C: Component>(
 
         entity = parent?.0;
     }
+}
+
+pub fn items_to_color(items: &Vec<Item>) -> Color {
+    let mut hasher = DefaultHasher::new();
+    items.hash(&mut hasher);
+
+    let hash = hasher.finish();
+
+    let hue = ((hash / 256) % 256) as f32;
+
+    Color::hsv(hue, 1.0, 1.0)
 }

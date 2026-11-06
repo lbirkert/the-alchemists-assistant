@@ -1,15 +1,18 @@
 use crate::prelude::*;
 
 mod camera;
+mod cauldron;
 mod debug;
 mod drawer;
 mod game_layer;
 mod interaction;
 mod inventory;
 mod item;
+mod liquid;
 mod manager;
 mod npc;
 mod player;
+mod potion;
 mod prelude;
 mod recipe;
 mod scene;
@@ -53,12 +56,18 @@ pub fn main() -> AppExit {
         sounds::plugin,
         player::plugin,
         interaction::plugin,
-        inventory::plugin,
+        item::plugin,
         drawer::plugin,
         upgrades::plugin,
         sticky_note::plugin,
     ));
-    app.add_plugins((manager::plugin, npc::plugin));
+    app.add_plugins((
+        manager::plugin,
+        npc::plugin,
+        potion::plugin,
+        cauldron::plugin,
+        liquid::plugin,
+    ));
 
     app.run()
 }

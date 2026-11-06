@@ -7,7 +7,7 @@ pub fn plugin(app: &mut App) {
 }
 
 pub const MAX_RECIPES: usize = 3;
-pub const DAY_DURATION: u32 = 60 * 1; // 1 minutes
+pub const DAY_DURATION: u32 = 60 * 3; // 1 minutes
 pub const DAY_GAME_DURATION: u32 = 3600; // 12 hours, e.g. 6:00 -> 18:00
 
 #[derive(Resource, Default, Clone)]

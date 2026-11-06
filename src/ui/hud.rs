@@ -113,10 +113,11 @@ fn update_hud_text(
     drawers: Query<&Drawer>,
     mortars: Query<&ProcessingStation>,
     mut text: Single<&mut Text, With<HudText>>,
+    cauldron: Single<&Cauldron>,
 ) {
     let value = if let Some((entity, ref interactable)) = focus.interactable {
         match (interactable, inventory.selection.as_ref()) {
-            (Interactable::Item(item), Some(in_hand)) => {
+            (Interactable::Item(item), Some(Selection::Item(in_hand))) => {
                 format!("[RMB] Swap {item} with {in_hand}")
             }
             (Interactable::Item(item) | Interactable::Source { item }, None) => {
@@ -130,6 +131,29 @@ fn update_hud_text(
             }
             (Interactable::ItemDiscardable, Some(Selection::Item(in_hand))) => {
                 format!("[RMB] Discard {in_hand}")
+            }
+            (
+                Interactable::NpcTable,
+                Some(Selection::Item(Item {
+                    potion:
+                        Some(PotionData {
+                            recipe: Some(..), ..
+                        }),
+                    ..
+                })),
+            ) => {
+                format!("[RMB] Submit Potion - press bell afterwards")
+            }
+            (
+                Interactable::Item(Item {
+                    potion: Some(PotionData { recipe: None, .. }),
+                    ..
+                }),
+                Some(Selection::StickyNote(StickyNote {
+                    recipe: Some(..), ..
+                })),
+            ) => {
+                format!("[RMB] Label potion with Recipe")
             }
             (Interactable::Source { .. }, Some(in_hand)) => format!("Already holding {in_hand}"),
             (
@@ -146,6 +170,21 @@ fn update_hud_text(
             (Interactable::StickyNote(_), None) => String::from("[RMB] Pick up Sticky Note"),
             (Interactable::StickyNote(_), Some(in_hand)) => format!("Already holding {in_hand}"),
             (Interactable::Bell, _) => format!("[RMB] call alchemist"),
+            (
+                Interactable::Cauldron,
+                Some(Selection::Item(Item {
+                    kind: ItemKind::Potion,
+                    potion: None,
+                    ..
+                })),
+            ) => {
+                if !cauldron.is_empty() {
+                    format!("[RMB] Fill Potion")
+                } else {
+                    String::new()
+                }
+            }
+            (Interactable::Cauldron, Some(Selection::Item(..))) => format!("[RMB] Add to Cauldron"),
             (Interactable::Station, _) => {
                 if let Ok(station) = mortars.get(entity) {
                     match (&station.state, inventory.selection.as_ref()) {
@@ -172,7 +211,7 @@ fn update_hud_text(
                             station.base_verb(false)
                         ),
                         (StationState::Done { item, .. }, None) => {
-                            format!("[RMB] Take {}", station.kind.process_item(*item))
+                            format!("[RMB] Take {}", station.kind.process_item(item.clone()))
                         }
                         _ => String::new(),
                     }

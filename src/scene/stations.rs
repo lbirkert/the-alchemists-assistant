@@ -203,7 +203,10 @@ fn station_interaction(
     {
         match (&station.state, inventory.selection.as_ref()) {
             (StationState::Idle, Some(Selection::Item(item))) => {
-                let scene = item.scene(&asset_server, Vec3::new(0., 0.2, 0.));
+                let scene = item.clone().scene(
+                    &asset_server,
+                    Transform::from_translation(Vec3::new(0., 0.2, 0.)),
+                );
                 let item_entity = commands
                     .spawn_scene(bsn! {
                         #StationItem
@@ -214,7 +217,7 @@ fn station_interaction(
                 station.state = StationState::Processing {
                     working: true,
                     transformed: false,
-                    item: *item,
+                    item: item.clone(),
                     item_entity,
                     timer: Timer::new(Duration::from_millis(2000), TimerMode::Once),
                 };
@@ -226,7 +229,8 @@ fn station_interaction(
             }
             (StationState::Done { item, item_entity }, None) => {
                 commands.entity(*item_entity).despawn();
-                inventory.selection = Some(Selection::Item(station.kind.process_item(*item)));
+                inventory.selection =
+                    Some(Selection::Item(station.kind.process_item(item.clone())));
                 station.state = StationState::Idle;
                 station.set_animation = true;
             }
@@ -285,9 +289,12 @@ fn update_station(
                     timer.tick(time.delta());
                     if timer.fraction() > 0.5 && !*transformed {
                         *transformed = true;
-                        let output_item = station_kind.process_item(*item);
+                        let output_item = station_kind.process_item(item.clone());
                         commands.entity(*item_entity).despawn();
-                        let scene = output_item.scene(&asset_server, Vec3::new(0., 0.2, 0.));
+                        let scene = output_item.scene(
+                            &asset_server,
+                            Transform::from_translation(Vec3::new(0., 0.2, 0.)),
+                        );
                         let new_item_entity = commands
                             .spawn_scene(bsn! {
                                 #StationItem
@@ -298,9 +305,9 @@ fn update_station(
                         *item_entity = new_item_entity;
                     }
                     if timer.just_finished() {
-                        statistics.process_item(*item);
+                        statistics.process_item(item.clone());
                         station.state = StationState::Done {
-                            item: *item,
+                            item: item.clone(),
                             item_entity: *item_entity,
                         };
                         station.set_animation = true;

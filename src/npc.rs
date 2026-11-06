@@ -60,7 +60,7 @@ pub enum WalkIntoRoomReason {
 #[derive(Reflect, Clone, Debug)]
 pub enum WalkOutOfRoomReason {
     SayToPlayer(MessageToPlayer),
-    TakePotion(Potion),
+    TakePotion(PotionData),
     NoPotion,
 }
 
@@ -188,10 +188,10 @@ fn update_walking_npc(
                         text: recipe.task_description.clone(),
                         recipe: Some(recipe.clone()),
                     }
-                    .scene(
+                    .physics_scene(
                         &asset_server,
-                        Vec3::new(0.0, offset, 0.0),
-                        Quat::from_rotation_x(std::f32::consts::FRAC_PI_2),
+                        Transform::from_translation(Vec3::new(0.0, offset, 0.0))
+                            .with_rotation(Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)),
                     );
                     commands
                         .spawn_scene(scene)
@@ -213,8 +213,18 @@ fn update_walking_npc(
         },
         NpcState::WalkOutOfRoom(ref reason) => match reason {
             WalkOutOfRoomReason::NoPotion => NpcState::Idle,
-            WalkOutOfRoomReason::TakePotion(_potion) => {
-                todo!("process potion, update recipies");
+            WalkOutOfRoomReason::TakePotion(potion) => {
+                let Some(recipe) = potion.recipe.as_ref() else {
+                    return;
+                };
+
+                let is_valid = potion.validate().unwrap();
+                // TODO: say message
+
+                let idx = manager.recipes.iter().position(|r| r == recipe);
+                manager.recipes.remove(idx.unwrap());
+
+                NpcState::Idle
             }
             WalkOutOfRoomReason::SayToPlayer(msg) => {
                 if matches!(msg, MessageToPlayer::Bye(_)) {

@@ -34,12 +34,14 @@ pub enum Interactable {
     ItemPlaceable,
     StickyNotePlaceable,
     ItemDiscardable,
+    NpcTable,
     Bell,
     Source {
         item: Item,
     },
     Drawer,
     Station,
+    Cauldron,
 }
 
 fn interaction(

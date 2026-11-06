@@ -82,12 +82,13 @@ pub struct NpcStickyNotes;
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[require(Interactable::NpcTable)]
 pub struct NpcTable {
-    pub potions: Vec<(Entity, Potion)>,
+    pub potions: Vec<(Entity, PotionData)>,
 }
 
 impl NpcTable {
-    pub fn validatable_potion(&mut self) -> Option<(Entity, Potion)> {
+    pub fn validatable_potion(&mut self) -> Option<(Entity, PotionData)> {
         let idx = self.potions.iter().position(|(_, p)| p.can_validate())?;
         Some(self.potions.remove(idx))
     }
