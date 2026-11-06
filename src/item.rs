@@ -31,6 +31,10 @@ pub struct ItemSource {
 impl ItemSource {
     fn on_add(mut world: DeferredWorld, ctx: HookContext) {
         let item = world.get::<Self>(ctx.entity).unwrap().item.clone();
+
+        // Sometimes bevy_skein behaves in unexpected ways.
+        debug_assert!(item.kind == ItemKind::Potion || item.potion.is_none());
+
         world
             .commands()
             .entity(ctx.entity)

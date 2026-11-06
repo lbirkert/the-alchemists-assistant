@@ -132,12 +132,10 @@ impl Station {
     fn pestle_item(&self, item: Item) -> Item {
         match item {
             Item {
-                kind: ItemKind::Garlic,
                 state: ItemState::Unprocessed,
                 ..
             } => item.grinded(),
             Item {
-                kind: ItemKind::Garlic,
                 state: ItemState::Sliced | ItemState::Grinded,
                 ..
             } => item.fine_grinded(),
@@ -148,7 +146,6 @@ impl Station {
     fn cut_item(&self, item: Item) -> Item {
         match item {
             Item {
-                kind: ItemKind::Garlic,
                 state: ItemState::Unprocessed,
                 ..
             } => item.sliced(),
@@ -295,7 +292,7 @@ fn update_station(
                     if timer.just_finished() {
                         let output_item = station_kind.process_item(item.clone());
                         commands.entity(*item_entity).despawn();
-                        let scene = output_item.scene(
+                        let scene = output_item.clone().scene(
                             &asset_server,
                             Transform::from_translation(Vec3::new(0., 0.2, 0.)),
                         );
@@ -306,7 +303,7 @@ fn update_station(
                                 @scene
                             })
                             .id();
-                        statistics.process_item(item.clone());
+                        statistics.process_item(output_item);
                         station.state = StationState::Done {
                             item: item.clone(),
                             item_entity: new_item_entity,
