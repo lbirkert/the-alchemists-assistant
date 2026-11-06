@@ -36,7 +36,7 @@ impl Statistics {
 
 #[derive(Resource, Reflect)]
 #[reflect(Resource)]
-struct GameUpgrades {
+pub struct GameUpgrades {
     items: HashMap<ItemKind, UpgradeState>,
     stations: HashMap<Station, UpgradeState>,
 }
@@ -44,8 +44,27 @@ struct GameUpgrades {
 #[derive(Reflect)]
 enum UpgradeState {
     UnlockedByDefault,
-    Locked { requirements: Vec<UnlockCondition> },
+    Locked {
+        requirements: Vec<UnlockCondition>,
+        is_implemented: bool,
+    },
     Unlocked,
+}
+
+impl UpgradeState {
+    fn locked(requirements: impl IntoIterator<Item = UnlockCondition>) -> Self {
+        Self::Locked {
+            requirements: requirements.into_iter().collect(),
+            is_implemented: true,
+        }
+    }
+
+    fn unimplemented() -> Self {
+        Self::Locked {
+            requirements: vec![],
+            is_implemented: false,
+        }
+    }
 }
 
 #[derive(Message, Clone, Copy, Debug)]
@@ -89,25 +108,23 @@ impl Default for GameUpgrades {
         let items = ItemKind::iter()
             .map(|item| {
                 (
-                    item.clone(),
+                    item,
                     match item {
                         ItemKind::Garlic => UpgradeState::UnlockedByDefault,
                         ItemKind::Flowers => UpgradeState::UnlockedByDefault,
                         ItemKind::Potion => UpgradeState::UnlockedByDefault,
-                        ItemKind::Grass => UpgradeState::Locked {
-                            requirements: vec![UnlockCondition::item(
-                                Item {
-                                    kind: ItemKind::Flowers,
-                                    state: ItemState::Grinded,
-                                    is_washed: false,
-                                    potion: None,
-                                },
-                                3,
-                            )],
-                        },
-                        ItemKind::Crystal => UpgradeState::Locked {
-                            requirements: vec![UnlockCondition::TotalItemsProcessed(10)],
-                        },
+                        ItemKind::Grass => UpgradeState::locked([UnlockCondition::item(
+                            Item {
+                                kind: ItemKind::Flowers,
+                                state: ItemState::Grinded,
+                                is_washed: false,
+                                potion: None,
+                            },
+                            3,
+                        )]),
+                        ItemKind::Crystal => {
+                            UpgradeState::locked([UnlockCondition::TotalItemsProcessed(10)])
+                        }
                     },
                 )
             })
@@ -118,9 +135,10 @@ impl Default for GameUpgrades {
                     item,
                     match item {
                         Station::CuttingBoard => UpgradeState::UnlockedByDefault,
-                        Station::Mortar => UpgradeState::Locked {
-                            requirements: vec![UnlockCondition::TotalItemsProcessed(5)],
-                        },
+                        Station::Mortar => {
+                            UpgradeState::locked([UnlockCondition::TotalItemsProcessed(5)])
+                        }
+                        Station::WaterTap => UpgradeState::unimplemented(),
                     },
                 )
             })
@@ -130,7 +148,34 @@ impl Default for GameUpgrades {
 }
 
 impl GameUpgrades {
-    fn item_is_locked(&self, item_kind: &ItemKind) -> bool {
+    pub fn item_is_locked(&self, item: &Item) -> bool {
+        let Item {
+            kind,
+            state,
+            is_washed,
+            potion,
+        } = item;
+        if potion.is_some() {
+            error!("Checking for locked state of potion was not intended");
+            return true;
+        }
+
+        let kind_is_locked = matches!(self.items[kind], UpgradeState::Locked { .. });
+
+        let mut station_is_locked = false;
+        if *is_washed && self.station_is_locked(&Station::WaterTap) {
+            station_is_locked = true;
+        }
+        if let Some(station) = state.needs_station()
+            && self.station_is_locked(&station)
+        {
+            station_is_locked = true;
+        }
+
+        kind_is_locked || station_is_locked
+    }
+
+    fn item_kind_is_locked(&self, item_kind: &ItemKind) -> bool {
         matches!(self.items[item_kind], UpgradeState::Locked { .. })
     }
 
@@ -145,7 +190,7 @@ fn hide_locked_things(
     stations: Query<(&ProcessingStation, &mut Visibility), Added<ProcessingStation>>,
 ) {
     for (source, mut visibility) in sources {
-        if upgrades.item_is_locked(&source.item.kind) {
+        if upgrades.item_kind_is_locked(&source.item.kind) {
             *visibility = Visibility::Hidden;
         }
     }
@@ -164,16 +209,22 @@ fn check_upgrade_requirements(
     stations: Query<(&ProcessingStation, &mut Visibility)>,
 ) {
     for (item, state) in &mut upgrades.items {
-        if let UpgradeState::Locked { requirements } = state
+        if let UpgradeState::Locked {
+            requirements,
+            is_implemented: true,
+        } = state
             && requirements.iter().all(|r| r.is_satisfied(&statistics))
         {
             *state = UpgradeState::Unlocked;
-            unlock_messages.write(NewUnlock::Item(item.clone()));
+            unlock_messages.write(NewUnlock::Item(*item));
         }
     }
 
     for (station, state) in &mut upgrades.stations {
-        if let UpgradeState::Locked { requirements } = state
+        if let UpgradeState::Locked {
+            requirements,
+            is_implemented: true,
+        } = state
             && requirements.iter().all(|r| r.is_satisfied(&statistics))
         {
             *state = UpgradeState::Unlocked;
@@ -182,7 +233,7 @@ fn check_upgrade_requirements(
     }
 
     for (source, mut visibility) in sources {
-        if *visibility == Visibility::Hidden && !upgrades.item_is_locked(&source.item.kind) {
+        if *visibility == Visibility::Hidden && !upgrades.item_kind_is_locked(&source.item.kind) {
             *visibility = Visibility::Inherited;
         }
     }

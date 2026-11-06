@@ -16,7 +16,7 @@ pub use crate::state::{
     SettingsOpen, TitleScreenPostUpdate, TitleScreenUpdate,
 };
 pub use crate::sticky_note::StickyNote;
-pub use crate::upgrades::Statistics;
+pub use crate::upgrades::{GameUpgrades, Statistics};
 
 pub use std::collections::VecDeque;
 pub use std::time::Duration;

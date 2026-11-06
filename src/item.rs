@@ -1,6 +1,6 @@
 use bevy::picking::backend::HitData;
 
-use crate::prelude::*;
+use crate::{prelude::*, scene::stations::Station};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(GameUpdate, (pickup_item, update_recipe_for_potion).chain());
@@ -195,6 +195,17 @@ impl Item {
         self
     }
 }
+
+impl ItemState {
+    pub fn needs_station(&self) -> Option<Station> {
+        match self {
+            Self::Unprocessed => None,
+            Self::Sliced => Some(Station::CuttingBoard),
+            Self::Grinded | Self::FineGrinded => Some(Station::Mortar),
+        }
+    }
+}
+
 fn pickup_item_from_source(
     mut messages: MessageReader<PlayerInteraction>,
     mut inventory: Single<&mut Inventory>,

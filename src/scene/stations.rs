@@ -21,6 +21,7 @@ pub enum Station {
     #[default]
     Mortar,
     CuttingBoard,
+    WaterTap,
 }
 
 #[derive(Reflect, Default)]
@@ -69,6 +70,7 @@ impl ProcessingStation {
         match self.kind {
             Station::Mortar => 2,
             Station::CuttingBoard => 2,
+            Station::WaterTap => unimplemented!(),
         }
     }
 
@@ -76,6 +78,7 @@ impl ProcessingStation {
         match self.kind {
             Station::Mortar => "Mortar.glb",
             Station::CuttingBoard => "CuttingBoard.glb",
+            Station::WaterTap => unimplemented!(),
         }
     }
 
@@ -85,6 +88,8 @@ impl ProcessingStation {
             Station::Mortar => "pestle",
             Station::CuttingBoard if capitalize => "Cut",
             Station::CuttingBoard => "cut",
+            Station::WaterTap if capitalize => "Wash",
+            Station::WaterTap => "wash",
         }
     }
 
@@ -92,6 +97,7 @@ impl ProcessingStation {
         match self.kind {
             Station::Mortar => "pestling",
             Station::CuttingBoard => "cutting",
+            Station::WaterTap => "washing",
         }
     }
 
@@ -99,6 +105,7 @@ impl ProcessingStation {
         match self.kind {
             Station::Mortar => handle.animations.first(),
             Station::CuttingBoard => handle.animations.get(1),
+            Station::WaterTap => unimplemented!(),
         }
         .copied()
     }
@@ -107,6 +114,7 @@ impl ProcessingStation {
         match self.kind {
             Station::Mortar => handle.animations.get(1),
             Station::CuttingBoard => handle.animations.first(),
+            Station::WaterTap => unimplemented!(),
         }
         .copied()
     }
@@ -117,6 +125,7 @@ impl Station {
         match self {
             Station::Mortar => self.pestle_item(item),
             Station::CuttingBoard => self.cut_item(item),
+            Station::WaterTap => unimplemented!(),
         }
     }
 

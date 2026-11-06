@@ -156,7 +156,7 @@ fn update_hud_text(
                 Some(Selection::Item(item))
                     if item.potion.as_ref().is_some_and(|p| p.recipe.is_some()) =>
                 {
-                    String::from("[RMB] Submit {item} - press bell afterwards")
+                    format!("[RMB] Submit {item} - press bell afterwards")
                 }
                 Some(Selection::Item(Item {
                     kind: ItemKind::Potion,

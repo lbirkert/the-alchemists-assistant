@@ -11,12 +11,9 @@ pub struct Recipe {
 
 #[derive(Debug, Clone, Reflect, PartialEq, Eq, Hash)]
 pub struct Ingredient {
-    steps_description: String,
+    steps_description: &'static str,
     item: Item,
 }
-
-// for faervans PR
-pub struct Upgrades;
 
 enum NameGender {
     Male,
@@ -100,21 +97,52 @@ const CONTINUE_PREFIXES: [&str; 6] = [
 ];
 
 impl Recipe {
-    #[rustfmt::skip]
-    fn steps_description(state: &ItemState, is_washed: &bool) -> String {
-    match (is_washed, state) {
-        (false, ItemState::Unprocessed) => format!("Just add to the cauldron."),
-        (false, ItemState::Sliced) => format!("Slice and add to the cauldron."),
-        (false, ItemState::Grinded) => format!("Grind and add to the cauldron."),
-        (false, ItemState::FineGrinded) => format!("Grind fine! and add to the cauldron."),
-        (true, ItemState::Unprocessed) => format!("Wash and add to the cauldron."),
-        (true, ItemState::Sliced) => format!("Wash, slice and add to the cauldron."),
-        (true, ItemState::Grinded) => format!("Wash, grind and add to the cauldron."),
-        (true, ItemState::FineGrinded) => format!("Wash, grind fine! and add to the cauldron."),
+    fn steps_description(state: &ItemState, is_washed: bool) -> &'static str {
+        match (is_washed, state) {
+            (false, ItemState::Unprocessed) => "Just add to the cauldron.",
+            (false, ItemState::Sliced) => "Slice and add to the cauldron.",
+            (false, ItemState::Grinded) => "Grind and add to the cauldron.",
+            (false, ItemState::FineGrinded) => "Grind fine! and add to the cauldron.",
+            (true, ItemState::Unprocessed) => "Wash and add to the cauldron.",
+            (true, ItemState::Sliced) => "Wash, slice and add to the cauldron.",
+            (true, ItemState::Grinded) => "Wash, grind and add to the cauldron.",
+            (true, ItemState::FineGrinded) => "Wash, grind fine! and add to the cauldron.",
+        }
     }
-}
 
-    fn get_garlic_ingredients(upgrades: &Upgrades) -> Vec<Ingredient> {
+    fn gather_ingredients(
+        upgrades: &GameUpgrades,
+        kind: ItemKind,
+        washed: &[bool],
+        states: &[ItemState],
+    ) -> Vec<Ingredient> {
+        let mut ingredients = Vec::new();
+        for is_washed in washed.iter().copied() {
+            for state in states.iter().copied() {
+                if upgrades.item_is_locked(&Item {
+                    kind: ItemKind::Garlic,
+                    state,
+                    is_washed,
+                    potion: None,
+                }) {
+                    continue;
+                }
+                ingredients.push(Ingredient {
+                    steps_description: Self::steps_description(&state, is_washed),
+                    item: Item {
+                        kind,
+                        is_washed,
+                        state,
+                        potion: None,
+                    },
+                });
+            }
+        }
+
+        ingredients
+    }
+
+    fn get_garlic_ingredients(upgrades: &GameUpgrades) -> Vec<Ingredient> {
         const IS_WASHED: [bool; 2] = [false, true];
         const STATES: [ItemState; 4] = [
             ItemState::Unprocessed,
@@ -122,27 +150,10 @@ impl Recipe {
             ItemState::Grinded,
             ItemState::FineGrinded,
         ];
-
-        let mut ingredients = Vec::new();
-        for is_washed in IS_WASHED.iter() {
-            for state in STATES.iter() {
-                // TODO: check upgrades for valid ingredients
-                ingredients.push(Ingredient {
-                    steps_description: Self::steps_description(state, is_washed),
-                    item: Item {
-                        kind: ItemKind::Garlic,
-                        is_washed: *is_washed,
-                        state: *state,
-                        potion: None,
-                    },
-                });
-            }
-        }
-
-        ingredients
+        Self::gather_ingredients(upgrades, ItemKind::Garlic, &IS_WASHED, &STATES)
     }
 
-    fn get_flowers_ingredients(upgrades: &Upgrades) -> Vec<Ingredient> {
+    fn get_flowers_ingredients(upgrades: &GameUpgrades) -> Vec<Ingredient> {
         const IS_WASHED: [bool; 1] = [false];
         const STATES: [ItemState; 3] = [
             ItemState::Unprocessed,
@@ -150,29 +161,14 @@ impl Recipe {
             ItemState::FineGrinded,
         ];
 
-        let mut ingredients = Vec::new();
-        for is_washed in IS_WASHED.iter() {
-            for state in STATES.iter() {
-                // TODO: check upgrades for valid ingredients
-                ingredients.push(Ingredient {
-                    steps_description: Self::steps_description(state, is_washed),
-                    item: Item {
-                        kind: ItemKind::Flowers,
-                        is_washed: *is_washed,
-                        state: *state,
-                        potion: None,
-                    },
-                });
-            }
-        }
-
-        ingredients
+        Self::gather_ingredients(upgrades, ItemKind::Flowers, &IS_WASHED, &STATES)
     }
 
-    fn get_ingredients(upgrades: &Upgrades) -> Vec<Vec<Ingredient>> {
-        let mut ingredients = Vec::new();
-        ingredients.push(Self::get_garlic_ingredients(&upgrades));
-        ingredients.push(Self::get_flowers_ingredients(&upgrades));
+    fn get_ingredients(upgrades: &GameUpgrades) -> Vec<Vec<Ingredient>> {
+        let ingredients = vec![
+            Self::get_garlic_ingredients(upgrades),
+            Self::get_flowers_ingredients(upgrades),
+        ];
         ingredients
     }
 
@@ -183,9 +179,9 @@ impl Recipe {
             .collect::<Vec<_>>()
     }
 
-    pub fn generate() -> Self {
+    pub fn generate(upgrades: &GameUpgrades) -> Self {
         let mut rng = rand::rng();
-        let mut available_ingredients = Self::get_ingredients(&Upgrades);
+        let mut available_ingredients = Self::get_ingredients(upgrades);
         let num_ingredients = rand::random_range(2..=available_ingredients.len());
 
         let mut ingredients = Vec::new();

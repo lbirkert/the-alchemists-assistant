@@ -31,6 +31,7 @@ fn add_station_audio(
         let source = match station.kind {
             Station::CuttingBoard => CUT_SOURCE,
             Station::Mortar => PESTLE_SOURCE,
+            Station::WaterTap => unimplemented!(),
         };
         commands.entity(entity).apply_scene(bsn! {
             StationAudio
@@ -67,6 +68,7 @@ fn update_station_audio(
             let playback_volume = match station.kind {
                 Station::Mortar => 2.,
                 Station::CuttingBoard => 1.,
+                Station::WaterTap => 1.,
             };
 
             match &mut *audio {

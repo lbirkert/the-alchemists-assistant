@@ -1,11 +1,11 @@
 # Priority
-- [ ] Restrict recipes to unlocked recipes/stations
 - [ ] Score board
 - [ ] Intro  cutscene
 - [ ] Ending screen
 - [ ] Title screen background scene
 - [ ] Credits
 - [ ] Add sliced flower model
+- [ ] Make flowers sliced after cutting them.
 - [ ] Add grass source
 
 # Nice-To-Have
@@ -20,4 +20,5 @@
 - [ ] Change sliced garlic model to fit into mortar.
 
 ## Done
+- [x] Restrict recipes to unlocked recipes/stations
 - [x] change station item at the end

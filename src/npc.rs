@@ -82,6 +82,7 @@ pub enum WalkOutOfRoomReason {
 }
 
 fn update_idle_npc(
+    upgrades: Res<GameUpgrades>,
     mut manager: Single<&mut GameManager>,
     mut npc: Single<&mut Npc>,
     time: Res<Time>,
@@ -120,7 +121,7 @@ fn update_idle_npc(
         // collect all recipes at once so you don't have to walk so much
         let mut recipes = Vec::new();
         while manager.should_bring_recipe() {
-            let recipe = Recipe::generate();
+            let recipe = Recipe::generate(&upgrades);
             manager.recipes.push(recipe.clone());
             recipes.push(recipe);
         }
