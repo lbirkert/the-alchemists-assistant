@@ -1,4 +1,4 @@
-use crate::{manager::FIRST_INGAME_DAY, prelude::*};
+use crate::prelude::*;
 
 use bevy::light::NotShadowCaster;
 use bevy_easings::EasingComponent;
@@ -11,13 +11,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_plugins(FloraPlugin);
 
     app.add_systems(ON_GAME_ENTER, spawn_scene);
-    app.add_systems(
-        GameUpdate,
-        (
-            rotate_clock_hand,
-            update_calendar_text.after(crate::manager::update_time),
-        ),
-    );
+    app.add_systems(GameUpdate, (rotate_clock_hand, update_calendar_text));
 }
 
 #[derive(Component, Reflect, Default)]
@@ -243,6 +237,7 @@ impl CalendarBlock {
 
 fn update_calendar_text(
     manager: Res<GameManager>,
+    mut next_day: Local<usize>,
     week_days: Query<&mut Text, With<CalendarBlockWeekdayText>>,
     days: Query<
         &mut Text,
@@ -252,9 +247,11 @@ fn update_calendar_text(
         ),
     >,
 ) {
-    if !manager.day_time.just_finished() && manager.day != FIRST_INGAME_DAY {
+    // Only update when a new day has started.
+    if manager.day < *next_day {
         return;
     }
+    *next_day += 1;
 
     for mut text in week_days {
         text.0 = manager.game_week_day().to_string();

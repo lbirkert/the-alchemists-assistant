@@ -14,6 +14,7 @@ use bevy_easings::{EaseMethod, EasingComponent};
 
 use crate::{
     manager::DayState,
+    potion::PotionReport,
     prelude::*,
     recipe::GREETINGS,
     scene::{NpcStickyNotes, NpcTable},
@@ -78,9 +79,16 @@ pub enum NpcState {
 }
 
 #[derive(Reflect, Clone, Debug)]
-pub enum MessageToPlayer {
-    Bye(String),
-    Hello(String),
+pub struct MessageToPlayer {
+    message: String,
+    context: MessageContext,
+}
+
+#[derive(Reflect, Clone, Debug)]
+enum MessageContext {
+    None,
+    StartDay,
+    EndDay,
 }
 
 #[derive(Reflect, Clone, Debug)]
@@ -97,6 +105,15 @@ pub enum WalkOutOfRoomReason {
     NoPotion,
 }
 
+impl NpcState {
+    fn say_to_player(message: impl ToString, context: MessageContext) -> Self {
+        Self::WalkIntoRoom(WalkIntoRoomReason::SayToPlayer(MessageToPlayer {
+            message: message.to_string(),
+            context,
+        }))
+    }
+}
+
 fn update_idle_npc(
     upgrades: Res<GameUpgrades>,
     mut manager: Single<&mut GameManager>,
@@ -110,22 +127,22 @@ fn update_idle_npc(
     match manager.day_state {
         DayState::Started => {
             let mut rng = rand::rng();
-            npc.state = NpcState::WalkIntoRoom(WalkIntoRoomReason::SayToPlayer(
-                MessageToPlayer::Hello(GREETINGS.choose(&mut rng).unwrap().to_string()),
-            ));
+            npc.state = NpcState::say_to_player(
+                GREETINGS.choose(&mut rng).unwrap(),
+                MessageContext::StartDay,
+            );
             manager.day_state = DayState::Running;
         }
         DayState::Running => {
             if manager.should_end_day() {
                 info!("It is {} o´clock, ending day", manager.game_hour());
                 npc.state_start = time.elapsed_secs();
-                npc.state =
-                    NpcState::WalkIntoRoom(WalkIntoRoomReason::SayToPlayer(MessageToPlayer::Bye(
-                        "It is evening already.\n\
+                npc.state = NpcState::say_to_player(
+                    "It is evening already.\n\
                         I will go to sleep now.\n\
-                        You should too."
-                            .to_string(),
-                    )));
+                        You should too.",
+                    MessageContext::EndDay,
+                );
                 // TODO: proper messages
 
                 return;
@@ -270,16 +287,27 @@ fn update_walking_npc(
                     return;
                 };
 
-                let is_valid = potion.validate().unwrap();
-                // TODO: say message
+                let report = potion.validate().unwrap();
+                manager.score_potion(report.is_valid());
 
                 let idx = manager.recipes.iter().position(|r| r == recipe);
                 manager.recipes.remove(idx.unwrap());
 
-                NpcState::Idle
+                debug!("{report:#?}");
+
+                match report {
+                    PotionReport::Valid => NpcState::Idle,
+                    PotionReport::WrongOrder => NpcState::say_to_player(
+                        "Your potion seems correct but on closer inspection, something is off.",
+                        MessageContext::None,
+                    ),
+                    PotionReport::Invalid { .. } => {
+                        NpcState::say_to_player("Invalid potion", MessageContext::None)
+                    }
+                }
             }
             WalkOutOfRoomReason::SayToPlayer(msg) => {
-                if matches!(msg, MessageToPlayer::Bye(_)) {
+                if matches!(msg.context, MessageContext::EndDay) {
                     manager.day_state = DayState::Ended;
                 }
 
@@ -305,13 +333,9 @@ fn update_speaking_npc(manager: Single<&GameManager>, mut npc: Single<&mut Npc>,
         return;
     };
 
-    let mut duration = match msg {
-        MessageToPlayer::Hello(msg) | MessageToPlayer::Bye(msg) => {
-            // Set speaking duration based on spoken words.
-            3. + msg.split_whitespace().count() as f32 * 0.5
-        }
-    };
-    if let MessageToPlayer::Bye(_) = msg {
+    // Set speaking duration based on amount of spoken words.
+    let mut duration = 3. + msg.message.split_whitespace().count() as f32 * 0.3;
+    if let MessageContext::EndDay = msg.context {
         // Show bye messages always longer.
         duration *= 2.;
     }
@@ -569,9 +593,7 @@ fn update_npc_speech_text(
     npc: Single<&Npc, Changed<Npc>>,
 ) {
     text.0 = match &npc.state {
-        NpcState::SpeakingToPlayer(MessageToPlayer::Hello(msg) | MessageToPlayer::Bye(msg)) => {
-            msg.clone()
-        }
+        NpcState::SpeakingToPlayer(MessageToPlayer { message, .. }) => message.clone(),
         NpcState::PreparingToSpeak { .. } => String::from("..."),
         _ => String::new(),
     };

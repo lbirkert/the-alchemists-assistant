@@ -23,7 +23,7 @@ const FIRST_DAY: u8 = 0;
 /// February
 const FIRST_MONTH: u8 = 1;
 
-pub const FIRST_INGAME_DAY: u32 = (FIRST_DAY + FIRST_MONTH * 28) as _;
+pub const FIRST_INGAME_DAY: usize = (FIRST_DAY + FIRST_MONTH * 28) as _;
 
 const WEEK_DAYS: [&str; 7] = [
     "Monday",
@@ -53,17 +53,17 @@ const MONTHS: [&str; 12] = [
 #[reflect(Resource)]
 pub struct GameManager {
     /// Current day number in game time.
-    pub day: u32,
+    pub day: usize,
     /// Number of days actually played (starts at zero, advances after each day)
-    pub days_played: u32,
+    pub days_played: usize,
     /// A looping timer tracking the current days time
     pub day_time: Timer,
     pub day_state: DayState,
     /// current active recipes, should always be #MAX_RECIPES
     pub recipes: Vec<Recipe>,
 
-    /// score variable
-    pub score: u32,
+    /// The scores of each played day. This list is indexable by `days_played`.
+    scores: Vec<Scores>,
 }
 
 #[derive(Reflect, Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -74,6 +74,15 @@ pub enum DayState {
     Running,
     /// The day has ended (or not started yet)
     Ended,
+}
+
+#[derive(Reflect, Default, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Scores {
+    /// The amount of potions submitted.
+    pub potions_submitted: usize,
+    /// The amount of submitted potions that did not conform to their recipe.
+    /// This is a subset of `potions_submitted`.
+    pub invalid_potions: usize,
 }
 
 impl GameManager {
@@ -99,15 +108,24 @@ impl GameManager {
     }
 
     pub fn game_week_day(&self) -> &'static str {
-        WEEK_DAYS[(self.day % 28 % 7) as usize]
+        WEEK_DAYS[self.day % 28 % 7]
     }
 
     pub fn game_month(&self) -> &'static str {
-        let month = (self.day / 28) as usize;
+        let month = self.day / 28;
         MONTHS[month % 12]
     }
 
+    pub fn score_potion(&mut self, is_valid: bool) {
+        self.scores[self.days_played].potions_submitted += 1;
+        if !is_valid {
+            self.scores[self.days_played].invalid_potions += 1;
+        }
+    }
+
     fn advance_day(&mut self) {
+        self.days_played += 1;
+        self.scores.push(Scores::default());
         self.day += 1;
         let week_day = self.day % 7;
         if week_day > 5 {
@@ -123,7 +141,7 @@ pub fn reset_game_manager(mut manager: Single<&mut GameManager>) {
         day_time,
         day_state,
         recipes,
-        score,
+        scores,
     } = &mut **manager;
     *day = FIRST_INGAME_DAY;
     *days_played = 0;
@@ -133,7 +151,8 @@ pub fn reset_game_manager(mut manager: Single<&mut GameManager>) {
     ));
     *day_state = DayState::Started;
     recipes.clear();
-    *score = 0;
+    scores.clear();
+    scores.push(Scores::default());
 }
 
 pub fn update_time(mut manager: Single<&mut GameManager>, time: Res<Time>) {

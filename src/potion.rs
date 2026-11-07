@@ -17,17 +17,126 @@ pub struct PotionData {
     // TODO: type: round, square, etc...
 }
 
+#[derive(Reflect, Debug, PartialEq, Eq, Hash)]
+pub enum PotionReport {
+    Valid,
+    /// The contained items are correct, but in the wrong order.
+    WrongOrder,
+    Invalid {
+        extra_items: Vec<ItemKind>,
+        missing_items: Vec<ItemKind>,
+        washed_but_should_not: Option<ItemKind>,
+        not_washed_but_should_have: bool,
+        /// Stores the item kind, the expected item state (from the recipe) and the actual
+        /// item state.
+        wrong_states: Vec<(ItemKind, ItemState, ItemState)>,
+    },
+}
+
 impl PotionData {
     pub fn can_validate(&self) -> bool {
         self.recipe.is_some()
     }
 
-    pub fn validate(&self) -> Option<bool> {
-        Some(self.items == self.recipe.as_ref()?.items())
+    pub fn validate(&self) -> Option<PotionReport> {
+        let recipe = self.recipe.as_ref()?.items();
+        let report = if self.items == recipe {
+            PotionReport::Valid
+        } else {
+            #[derive(Default)]
+            struct ItemKindData {
+                count: usize,
+                washed: usize,
+                states: HashMap<ItemState, usize>,
+            }
+
+            // Create a collection of the desired item counts
+            let mut items: HashMap<ItemKind, ItemKindData> = HashMap::new();
+            for item in recipe {
+                let data = items.entry(item.kind).or_default();
+                data.count += 1;
+                if item.is_washed {
+                    data.washed += 1;
+                }
+                *data.states.entry(item.state).or_default() += 1;
+            }
+
+            let mut washed_but_should_not = None;
+            let mut extra_items = vec![];
+            let mut item_state_not_in_recipe: Vec<(ItemKind, ItemState)> = vec![];
+            for item in &self.items {
+                match items.get_mut(&item.kind) {
+                    Some(data) => {
+                        if data.count == 0 {
+                            // TODO! item kind was there, but not enough
+                        } else {
+                            data.count -= 1;
+                        }
+                        if item.is_washed {
+                            if data.washed == 0 {
+                                washed_but_should_not = Some(item.kind);
+                            } else {
+                                data.washed -= 1;
+                            }
+                        }
+                        match data.states.get_mut(&item.state) {
+                            Some(count) if *count > 0 => *count -= 1,
+                            _ => {
+                                item_state_not_in_recipe.push((item.kind, item.state));
+                            }
+                        }
+                    }
+                    None => {
+                        extra_items.push(item.kind);
+                    }
+                }
+            }
+
+            let all_recipe_items_contained = items.values().all(|data| {
+                data.count == 0 && data.washed == 0 && data.states.values().all(|count| *count == 0)
+            });
+
+            if all_recipe_items_contained && extra_items.is_empty() {
+                PotionReport::WrongOrder
+            } else {
+                PotionReport::Invalid {
+                    extra_items,
+                    missing_items: items.iter().fold(vec![], |mut acc, (kind, data)| {
+                        if data.count > 0 {
+                            acc.push(*kind);
+                        }
+                        acc
+                    }),
+                    washed_but_should_not,
+                    not_washed_but_should_have: items.values().any(|data| data.washed > data.count),
+                    wrong_states: item_state_not_in_recipe.into_iter().fold(
+                        vec![],
+                        |mut acc, (kind, state)| {
+                            if let Some((recipe_state, count)) =
+                                items.get_mut(&kind).and_then(|data| {
+                                    data.states.iter_mut().find(|(_state, count)| **count > 0)
+                                })
+                            {
+                                *count -= 1;
+                                acc.push((kind, state, *recipe_state));
+                            }
+                            acc
+                        },
+                    ),
+                }
+            }
+        };
+        Some(report)
     }
 
     pub fn color(&self) -> Color {
         crate::utils::items_to_color(&self.items)
+    }
+}
+
+impl PotionReport {
+    pub fn is_valid(&self) -> bool {
+        *self == PotionReport::Valid
     }
 }
 
