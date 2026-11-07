@@ -1,3 +1,4 @@
+use bevy::input::keyboard::Key;
 use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 
 use crate::prelude::*;
@@ -31,6 +32,9 @@ pub(super) fn plugin(app: &mut App) {
         GameUpdate,
         draw_mesh_intersections.run_if(input_toggle_active(DEBUG_ENABLED_DEFAULT, KeyCode::F4)),
     );
+
+    // Game speed
+    app.add_systems(Update, game_speed);
 }
 
 fn toggle_physics_gizmo(mut store: ResMut<GizmoConfigStore>) {
@@ -55,5 +59,34 @@ fn draw_mesh_intersections(
             point + normal.normalize() * 0.5,
             bevy::color::palettes::tailwind::PINK_100,
         );
+    }
+}
+
+fn game_speed(
+    mut time: ResMut<Time<Virtual>>,
+    input: Res<ButtonInput<Key>>,
+    mut speed_initialized: Local<bool>,
+    mut speed: Local<usize>,
+) {
+    if !*speed_initialized {
+        *speed = 1;
+        *speed_initialized = true;
+    }
+    if input.pressed(Key::Character("t".into())) {
+        if input.just_pressed(Key::Character("+".into())) {
+            *speed += 1;
+            time.set_relative_speed(*speed as _);
+            debug!("Set the game speed to {}", *speed);
+        }
+        if input.just_pressed(Key::Character("-".into())) {
+            *speed = speed.saturating_sub(1);
+            time.set_relative_speed(*speed as _);
+            debug!("Set the game speed to {}", *speed);
+        }
+        if input.just_pressed(Key::Character("0".into())) {
+            *speed = 1;
+            time.set_relative_speed(*speed as _);
+            debug!("Set the game speed to {}", *speed);
+        }
     }
 }
