@@ -39,7 +39,7 @@ pub fn plugin(app: &mut App) {
 #[component(on_add)]
 pub struct Npc {
     state_start: f32, // state starting time
-    state: NpcState,
+    pub state: NpcState,
 }
 
 impl Npc {
@@ -67,6 +67,10 @@ impl Npc {
 pub enum NpcState {
     #[default]
     Idle,
+    PreparingToSpeak {
+        timer: Timer,
+        message: MessageToPlayer,
+    },
     SpeakingToPlayer(MessageToPlayer),
     WalkIntoRoom(WalkIntoRoomReason),
     WalkOutOfRoom(WalkOutOfRoomReason),
@@ -243,7 +247,10 @@ fn update_walking_npc(
                     None => NpcState::WalkOutOfRoom(WalkOutOfRoomReason::NoPotion),
                 }
             }
-            WalkIntoRoomReason::SayToPlayer(msg) => NpcState::SpeakingToPlayer(msg.clone()),
+            WalkIntoRoomReason::SayToPlayer(msg) => NpcState::PreparingToSpeak {
+                timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
+                message: msg.clone(),
+            },
         },
         NpcState::WalkOutOfRoom(ref reason) => match reason {
             WalkOutOfRoomReason::NoPotion => NpcState::Idle,
@@ -278,6 +285,12 @@ fn update_speaking_npc(manager: Single<&GameManager>, mut npc: Single<&mut Npc>,
     }
 
     let NpcState::SpeakingToPlayer(ref msg) = npc.state else {
+        if let NpcState::PreparingToSpeak { timer, message } = &mut npc.state {
+            timer.tick(time.delta());
+            if timer.is_finished() {
+                npc.state = NpcState::SpeakingToPlayer(message.clone());
+            }
+        }
         return;
     };
 
@@ -423,7 +436,9 @@ fn update_npc_animation(
 ) {
     let (entity, animation_state, npc) = &mut *npc;
     let new_animation = match npc.state {
-        NpcState::Idle | NpcState::SpeakingToPlayer(_) => NpcAnimationState::Idle,
+        NpcState::Idle | NpcState::PreparingToSpeak { .. } | NpcState::SpeakingToPlayer(_) => {
+            NpcAnimationState::Idle
+        }
         NpcState::WalkIntoRoom(_) | NpcState::WalkOutOfRoom(_) => NpcAnimationState::Walking,
     };
     if new_animation != **animation_state {
@@ -436,7 +451,7 @@ fn update_npc_animation(
             NpcAnimationState::Walking => {
                 commands
                     .entity(*entity)
-                    .insert(IsMoving::default().with_volume(3.));
+                    .insert(IsMoving::default().with_volume(2.));
                 (animations.walk, 2.)
             }
         };
@@ -532,6 +547,7 @@ fn update_npc_speech_text(
         NpcState::SpeakingToPlayer(MessageToPlayer::Hello(msg) | MessageToPlayer::Bye(msg)) => {
             msg.clone()
         }
+        NpcState::PreparingToSpeak { .. } => String::from("..."),
         _ => String::new(),
     };
 }

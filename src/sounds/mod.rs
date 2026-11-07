@@ -4,10 +4,16 @@ use crate::prelude::*;
 
 mod drawer;
 pub mod movement;
+mod npc;
 mod station;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((movement::plugin, drawer::plugin, station::plugin));
+    app.add_plugins((
+        movement::plugin,
+        drawer::plugin,
+        station::plugin,
+        npc::plugin,
+    ));
 }
 
 fn audio_scene(parent: Entity, sources: &[&'static str]) -> impl Scene {

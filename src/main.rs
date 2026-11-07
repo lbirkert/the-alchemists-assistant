@@ -1,3 +1,5 @@
+use bevy::audio::AudioPlugin;
+
 use crate::prelude::*;
 
 mod camera;
@@ -27,13 +29,20 @@ mod utils;
 pub fn main() -> AppExit {
     let mut app = App::new();
     // Bevy plugins
-    app.add_plugins(DefaultPlugins.set(WindowPlugin {
-        primary_window: Some(Window {
-            title: "The Alchemists Assistant".to_string(),
-            ..Default::default()
-        }),
-        ..Default::default()
-    }));
+    app.add_plugins(
+        DefaultPlugins
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "The Alchemists Assistant".to_string(),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            })
+            .set(AudioPlugin {
+                default_spatial_scale: bevy::audio::SpatialScale(Vec3::ONE * 0.3),
+                ..Default::default()
+            }),
+    );
     app.add_plugins(MeshPickingPlugin);
     app.insert_resource(MeshPickingSettings::default());
 
