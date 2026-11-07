@@ -10,6 +10,7 @@
 // SayByeToPlayer: on finished -> Idle + set day_ended to true
 
 use bevy::{picking::backend::HitData, world_serialization::WorldInstanceReady};
+use bevy_easings::{EaseMethod, EasingComponent};
 
 use crate::{
     manager::DayState,
@@ -183,7 +184,8 @@ fn update_walking_npc(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut manager: Single<&mut GameManager>,
-    mut npc_query: Single<(&mut Transform, &mut Npc, &NpcTargetPositions)>,
+    mut npc_query: Single<(&mut Transform, &mut Npc, &NpcTargetPositions), Without<NpcArmature>>,
+    npc_armature: Single<(Entity, &Transform, Has<EasingComponent<Transform>>), With<NpcArmature>>,
     mut npc_table: Single<&mut NpcTable>,
     npc_sticky_notes: Single<Entity, With<NpcStickyNotes>>,
     time: Res<Time>,
@@ -202,6 +204,15 @@ fn update_walking_npc(
         NpcState::WalkOutOfRoom(..) => target_positions.outside,
         _ => return,
     };
+
+    let (armature_entity, armature_transform, has_easing) = *npc_armature;
+    if !has_easing {
+        rotate_if_needed(
+            commands.entity(armature_entity),
+            target_pos - transform.translation,
+            armature_transform,
+        );
+    }
 
     let has_reached_target = walk_npc(transform, &time, target_pos);
     if !has_reached_target {
@@ -313,6 +324,20 @@ fn update_speaking_npc(manager: Single<&GameManager>, mut npc: Single<&mut Npc>,
 
     npc.state = NpcState::WalkOutOfRoom(WalkOutOfRoomReason::SayToPlayer(msg.clone()));
     npc.state_start = now;
+}
+
+fn rotate_if_needed(mut commands: EntityCommands, direction: Vec3, transform: &Transform) {
+    let forward = transform.back().as_vec3();
+    if direction.angle_between(forward) > 0.1 {
+        let rotation = Quat::from_rotation_arc(Vec3::NEG_Z, forward);
+        commands.insert(transform.ease_to(
+            transform.with_rotation(rotation),
+            EaseMethod::Linear,
+            EasingType::Once {
+                duration: Duration::from_millis(300),
+            },
+        ));
+    }
 }
 
 fn walk_npc(transform: &mut Transform, time: &Time, target_pos: Vec3) -> bool {
