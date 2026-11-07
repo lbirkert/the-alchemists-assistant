@@ -352,7 +352,7 @@ fn update_speaking_npc(manager: Single<&GameManager>, mut npc: Single<&mut Npc>,
 
 fn rotate_if_needed(mut commands: EntityCommands, direction: Vec3, transform: &Transform) {
     let forward = transform.back().as_vec3();
-    if direction.angle_between(forward) > 0.1 {
+    if direction.angle_between(forward) > 0.1 && direction.length_squared() > 1. {
         let rotation = Quat::from_rotation_arc(Vec3::NEG_Z, forward);
         commands.insert(transform.ease_to(
             transform.with_rotation(rotation),
