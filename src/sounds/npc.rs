@@ -41,33 +41,33 @@ const MUMBLING_VOLUME: f32 = 2.;
 
 fn update_npc_audio(
     time: Res<Time>,
-    // mut commands: Commands,
+    mut commands: Commands,
     query: Query<(Entity, &Npc, &mut NpcAudio, &mut SpatialAudioSink)>,
 ) {
-    for (_npc_entity, npc, mut audio, mut sink) in query {
-        if matches!(npc.state, NpcState::PreparingToSpeak { .. })
-            && !matches!(*audio, NpcAudio::Harrumph)
-        {
-            // My ears are bleeding
-            // commands.spawn_scene(bsn! {
-            //     @audio_scene(npc_entity, &["audio/npc/npc_harrumph.ogg"])
-            //     PlaybackSettings {
-            //         volume: Volume::Linear(1.),
-            //     }
-            // });
-            sink.set_volume(Volume::Linear(0.));
-            sink.pause();
+    for (npc_entity, npc, mut audio, mut sink) in query {
+        if matches!(npc.state, NpcState::PreparingToSpeak { .. }) {
+            if !matches!(*audio, NpcAudio::Harrumph) {
+                commands.spawn_scene(bsn! {
+                    @audio_scene(npc_entity, &["audio/npc/npc_harrumph.ogg"])
+                    PlaybackSettings {
+                        volume: Volume::Linear(1.),
+                    }
+                });
+                sink.set_volume(Volume::Linear(0.));
+                sink.pause();
+                *audio = NpcAudio::Harrumph;
+            }
             continue;
         }
         let is_speaking = matches!(npc.state, NpcState::SpeakingToPlayer(_));
-        let is_paused = matches!(*audio, NpcAudio::Idle | NpcAudio::MumbleFadeOut { .. });
+        let is_mumbling = matches!(*audio, NpcAudio::Mumbling | NpcAudio::MumbleFadeIn { .. });
 
-        if is_speaking && is_paused {
+        if is_speaking && !is_mumbling {
             sink.play();
             *audio = NpcAudio::MumbleFadeIn {
                 timer: Timer::new(FADE_IN, TimerMode::Once),
             };
-        } else if !is_speaking && !is_paused {
+        } else if !is_speaking && is_mumbling {
             *audio = NpcAudio::MumbleFadeOut {
                 timer: Timer::new(FADE_OUT, TimerMode::Once),
             };
