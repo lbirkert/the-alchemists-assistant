@@ -5,12 +5,9 @@
 - [ ] Title screen background scene
 - [ ] Credits
 - [ ] Add sliced flower model
-- [ ] Make flowers sliced after cutting them.
-- [ ] Add grass source
 
 # Nice-To-Have
 - [ ] Refine NPC message UI
-- [ ] Clock animation
 - [ ] Water tap functionality
 - [ ] Cauldron stirring
 - [ ] Cauldron visuals / audio
@@ -22,3 +19,6 @@
 ## Done
 - [x] Restrict recipes to unlocked recipes/stations
 - [x] change station item at the end
+- [x] Make flowers sliced after cutting them.
+- [x] Add grass source
+- [x] Clock animation

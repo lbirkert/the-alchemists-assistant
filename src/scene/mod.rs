@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+use bevy_easings::EasingComponent;
 use bevy_flora::{FloraPlugin, Growing, ProceduralTree, TreeAge, TreePreset};
 
 pub mod stations;
@@ -9,6 +10,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_plugins(FloraPlugin);
 
     app.add_systems(ON_GAME_ENTER, spawn_scene);
+    app.add_systems(GameUpdate, rotate_clock_hand);
 }
 
 #[derive(Component, Reflect, Default)]
@@ -87,6 +89,10 @@ pub struct NpcTable {
     pub potions: Vec<(Entity, PotionData)>,
 }
 
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+struct GameClockHand;
+
 impl NpcTable {
     pub fn validatable_potion(&mut self) -> Option<(Entity, PotionData)> {
         let idx = self.potions.iter().position(|(_, p)| p.can_validate())?;
@@ -106,4 +112,23 @@ fn spawn_scene(mut commands: Commands) {
         brightness: 100.0,
         ..default()
     });
+}
+
+fn rotate_clock_hand(
+    manager: Res<GameManager>,
+    mut commands: Commands,
+    query: Query<(Entity, &Transform), (With<GameClockHand>, Without<EasingComponent<Transform>>)>,
+) {
+    let rotation = Quat::from_rotation_z(-TAU * manager.game_hour() as f32 / 24.);
+    for (entity, transform) in query {
+        if rotation.angle_between(transform.rotation) > 0.1 {
+            commands.entity(entity).insert(transform.ease_to(
+                transform.with_rotation(rotation),
+                EaseFunction::ExponentialIn,
+                EasingType::Once {
+                    duration: Duration::from_millis(350),
+                },
+            ));
+        }
+    }
 }

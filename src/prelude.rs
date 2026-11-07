@@ -19,6 +19,7 @@ pub use crate::sticky_note::StickyNote;
 pub use crate::upgrades::{GameUpgrades, Statistics};
 
 pub use std::collections::VecDeque;
+pub use std::f32::consts::{PI, TAU};
 pub use std::time::Duration;
 
 pub use rand::seq::IndexedRandom as _;
