@@ -268,7 +268,7 @@ fn update_recipe_for_potion(
     }
 }
 
-fn pickup_item(
+pub fn pickup_item(
     mut messages: MessageReader<PlayerInteraction>,
     mut commands: Commands,
     assets_server: Res<AssetServer>,
@@ -277,6 +277,7 @@ fn pickup_item(
 ) {
     let Some(PlayerInteraction {
         entity,
+        // Careful with race condition with label_potion!
         kind: Interactable::Item(item),
         ..
     }) = messages.read().next()
@@ -284,18 +285,22 @@ fn pickup_item(
         return;
     };
 
-    if !inventory.selection.as_ref().is_none_or(|s| s.is_item()) {
+    if inventory.selection.as_ref().is_some_and(|s| !s.is_item()) {
         return;
     }
 
     if let Ok(item_transform) = transforms.get(*entity) {
         let old_item = inventory.selection.replace(Selection::Item(item.clone()));
-        if let Some(Selection::Item(old_item)) = old_item {
-            let item_scene = old_item.physics_scene(&assets_server, *item_transform, Vec3::ZERO);
-            commands.spawn_scene(item_scene);
+        match old_item {
+            Some(Selection::Item(old_item)) => {
+                let item_scene =
+                    old_item.physics_scene(&assets_server, *item_transform, Vec3::ZERO);
+                commands.spawn_scene(item_scene);
+            }
+            Some(Selection::StickyNote(_)) => unreachable!("We checked this above"),
+            None => {}
         }
-        info!("destroy item!");
-        // destroy old item
+        // Destroy the focused item, we already put it in the inventory
         commands.entity(*entity).despawn();
     }
 }

@@ -4,7 +4,7 @@ use crate::{item::ITEM_SIZE, prelude::*, scene::NpcTable};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(GameUpdate, fill_potion);
-    app.add_systems(GameUpdate, label_potion);
+    app.add_systems(GameUpdate, label_potion.after(crate::item::pickup_item));
     app.add_systems(GameUpdate, submit_potion);
 }
 
@@ -187,6 +187,7 @@ fn label_potion(
 ) {
     let Some(PlayerInteraction {
         entity,
+        // Careful with race pickup_item
         kind: Interactable::Item(item),
         ..
     }) = messages.read().next()
