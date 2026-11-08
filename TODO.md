@@ -3,7 +3,6 @@
 - [ ] Title screen background scene
 - [ ] Credits
 - [ ] Add sliced flower model
-- [ ] Sleeping
 
 ## Npc
 - [ ] Add more farewell messages
@@ -28,3 +27,4 @@
 - [x] Clock animation
 - [x] Score board
 - [x] Ending screen
+- [x] Sleeping

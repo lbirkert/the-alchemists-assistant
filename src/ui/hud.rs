@@ -2,6 +2,7 @@ use bevy_easings::CustomComponentEase;
 
 use crate::{
     drawer::Drawer,
+    manager::DayState,
     prelude::*,
     scene::stations::{ProcessingStation, StationState},
     upgrades::NewUnlock,
@@ -109,6 +110,7 @@ fn setup(mut commands: Commands) {
 
 fn update_hud_text(
     focus: Res<PlayerFocus>,
+    manager: Res<GameManager>,
     inventory: Single<&Inventory>,
     drawers: Query<&Drawer>,
     mortars: Query<&ProcessingStation>,
@@ -235,6 +237,10 @@ fn update_hud_text(
                     }
                 }
                 None | Some(Selection::StickyNote(_)) => String::new(),
+            },
+            Interactable::Door => match manager.day_state {
+                DayState::Running | DayState::Started => String::new(),
+                DayState::Ended => String::from("[RMB] Go to sleep"),
             },
         }
     } else {

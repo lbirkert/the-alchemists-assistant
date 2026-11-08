@@ -4,7 +4,11 @@ use bevy_inspector_egui::{
     quick::WorldInspectorPlugin,
 };
 
-use crate::{ending::MonthEnded, prelude::*};
+use crate::{
+    ending::MonthEnded,
+    manager::{DAY_DURATION, DAY_END_HOUR},
+    prelude::*,
+};
 
 const DEBUG_ENABLED_DEFAULT: bool = false;
 
@@ -41,7 +45,7 @@ pub(super) fn plugin(app: &mut App) {
     );
 
     // Game speed/time
-    app.add_systems(Update, (game_speed, skip_day, end_month));
+    app.add_systems(Update, (game_speed, skip_day, end_day, end_month));
 }
 
 fn toggle_physics_gizmo(mut store: ResMut<GizmoConfigStore>) {
@@ -101,6 +105,14 @@ fn game_speed(
 fn skip_day(mut manager: ResMut<GameManager>, input: Res<ButtonInput<KeyCode>>) {
     if input.pressed(KeyCode::KeyT) && input.just_pressed(KeyCode::KeyN) {
         manager.day_time.almost_finish();
+    }
+}
+
+fn end_day(mut manager: ResMut<GameManager>, input: Res<ButtonInput<KeyCode>>) {
+    if input.pressed(KeyCode::KeyT) && input.just_pressed(KeyCode::KeyP) {
+        manager
+            .day_time
+            .set_elapsed(Duration::from_secs(DAY_DURATION / 24 * DAY_END_HOUR as u64));
     }
 }
 

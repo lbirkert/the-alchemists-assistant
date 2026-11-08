@@ -42,6 +42,7 @@ pub enum Interactable {
     Drawer,
     Station,
     Cauldron,
+    Door,
 }
 
 fn interaction(

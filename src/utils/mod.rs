@@ -1,7 +1,11 @@
 use crate::prelude::*;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
+pub mod color_overlay;
+
 pub(super) fn plugin(app: &mut App) {
+    app.add_plugins(color_overlay::plugin);
+
     app.add_systems(GameUpdate, (remove_meshes, billboard));
 }
 
