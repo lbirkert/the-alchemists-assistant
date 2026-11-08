@@ -40,6 +40,18 @@ fn setup(mut commands: Commands) {
                     right: percent(12)
                 }
             }
+            BackgroundGradient::from(LinearGradient {
+                stops: vec![
+                    ColorStop::new(Color::NONE, percent(0)),
+                    ColorStop::new(Color::NONE, percent(62)),
+                    ColorStop::new(Color::srgba(0., 0., 0., 0.825), percent(67)),
+                    ColorStop::new(Color::srgba(0., 0., 0., 0.825), percent(91)),
+                    ColorStop::new(Color::NONE, percent(96)),
+                    ColorStop::new(Color::NONE, percent(100)),
+                ],
+                angle: PI / 2.,
+                ..Default::default()
+            })
             DespawnOnEnter::<SettingsOpen>(SettingsOpen(true))
             DespawnOnExit::<GamePaused>(GamePaused(true))
         })

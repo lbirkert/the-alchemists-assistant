@@ -3,8 +3,10 @@
 - [ ] Title screen background scene
 - [ ] Credits
 - [ ] Add sliced flower model
-- [ ] Add more farewell messages
 - [ ] Sleeping
+
+## Npc
+- [ ] Add more farewell messages
 - [ ] Add invalid potion messages
 
 # Nice-To-Have
@@ -18,7 +20,7 @@
 - [ ] Music
 - [ ] Change sliced garlic model to fit into mortar.
 
-## Done
+# Done
 - [x] Restrict recipes to unlocked recipes/stations
 - [x] change station item at the end
 - [x] Make flowers sliced after cutting them.

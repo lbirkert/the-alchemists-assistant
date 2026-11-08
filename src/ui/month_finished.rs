@@ -25,11 +25,38 @@ fn setup(mut commands: Commands) {
                 row_gap: px(10),
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                padding: UiRect {
-                    right: percent(12)
-                }
             }
+            BackgroundGradient::from(LinearGradient {
+                stops: vec![
+                    ColorStop::new(Color::NONE, percent(0)),
+                    ColorStop::new(Color::NONE, percent(15)),
+                    ColorStop::new(Color::srgba(0., 0., 0., 0.825), percent(30)),
+                    ColorStop::new(Color::srgba(0., 0., 0., 0.825), percent(70)),
+                    ColorStop::new(Color::NONE, percent(85)),
+                    ColorStop::new(Color::NONE, percent(100)),
+                ],
+                angle: PI / 2.,
+                ..Default::default()
+            })
             DespawnOnExit::<MonthFinishedScreen>(MonthFinishedScreen(true))
+            Children [
+                #NewTitleText
+                Text::new("You aquired a new title:")
+                TextFont {
+                    font_size: rem(2)
+                }
+                --
+                #EmployeeOfMonthText
+                Text::new("Employee of the Month")
+                TextFont {
+                    font_size: rem(3)
+                }
+                --
+                #Spacing
+                Node {
+                    height: px(15)
+                }
+            ]
         })
         .id();
 

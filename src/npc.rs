@@ -18,7 +18,6 @@ use crate::{
     prelude::*,
     scene::{NpcStickyNotes, NpcTable},
     sounds::movement::IsMoving,
-    state::MonthFinishedScreen,
     utils::Billboarded,
 };
 
