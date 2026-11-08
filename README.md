@@ -24,3 +24,10 @@ With this money you can upgrade your alchemy equipment to brew new
 potion types and make money faster.
 
 Your goal is it to become employee of the month again.
+
+## Credits
+- To [TheBevyFlock/bevy_new_2d](https://github.com/TheBevyFlock/bevy_new_2d) for `Cargo.toml` and GitHub configuration.
+- The amazing crates found in `Cargo.toml` and their recursive dependencies.
+- To awesome asset editing software: Blender, Krita, Audacity
+
+- **TODO** Credit the few used public domain model assets here.

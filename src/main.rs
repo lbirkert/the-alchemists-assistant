@@ -34,6 +34,7 @@ pub fn main() -> AppExit {
             .set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "The Alchemists Assistant".to_string(),
+                    name: Some("the-alchemists-assistant".to_string()),
                     ..Default::default()
                 }),
                 ..Default::default()
