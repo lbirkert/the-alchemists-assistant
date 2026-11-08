@@ -55,7 +55,7 @@ pub struct GameManager {
     /// Current day number in game time.
     pub day: usize,
     /// Number of days actually played (starts at zero, advances after each day)
-    days_played: usize,
+    pub days_played: usize,
     /// Number of days played this month
     days_played_this_month: usize,
     /// A looping timer tracking the current days time

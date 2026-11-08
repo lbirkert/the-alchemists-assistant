@@ -33,11 +33,11 @@ pub const END_DAY_TEXTS: [&str; 6] = [
 
 impl NpcDialogue {
     pub fn generate_greeting(manager: &GameManager) -> impl ToString {
-        if manager.day == 0 {
+        if manager.days_played == 0 {
             return FIRST_GREETING;
         }
 
-        let scores = manager.scores[manager.day - 1];
+        let scores = manager.scores[manager.days_played - 1];
         // good potion => +2
         // bad potion => +1
         let score = 2 * scores.potions_submitted as i32 - scores.invalid_potions as i32;
@@ -79,7 +79,7 @@ impl NpcDialogue {
         )
     }
 
-    pub fn generate_potion_report(report: &PotionReort, recipe: &Recipe) -> Option<String> {
+    pub fn generate_potion_report(report: &PotionReport, recipe: &Recipe) -> Option<String> {
         // TODO: we should also later add why the potion was good/wrong
         Some(match report {
             PotionReport::Valid => format!("{}", recipe.positive_result),
