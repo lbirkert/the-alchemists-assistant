@@ -37,7 +37,7 @@ fn add_npc_audio(mut commands: Commands, added: Query<Entity, Added<Npc>>) {
 
 const FADE_IN: Duration = Duration::from_millis(50);
 const FADE_OUT: Duration = Duration::from_millis(150);
-const MUMBLING_VOLUME: f32 = 2.;
+const MUMBLING_VOLUME: f32 = 1.7;
 
 fn update_npc_audio(
     time: Res<Time>,

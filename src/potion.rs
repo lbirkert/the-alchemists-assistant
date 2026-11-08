@@ -172,7 +172,7 @@ fn fill_potion(
         items: cauldron.items.clone(),
         recipe: None,
     };
-    cauldron.items.truncate(0);
+    cauldron.items.clear();
     inventory.selection.replace(Selection::Item(Item {
         kind: ItemKind::Potion,
         potion: Some(potion),

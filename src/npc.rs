@@ -293,7 +293,7 @@ fn update_walking_npc(
                 let idx = manager.recipes.iter().position(|r| r == recipe);
                 manager.recipes.remove(idx.unwrap());
 
-                debug!("{report:#?}");
+                debug!("PotionReport: {report:#?}");
 
                 match report {
                     PotionReport::Valid => NpcState::Idle,
@@ -500,7 +500,7 @@ fn update_npc_animation(
             NpcAnimationState::Walking => {
                 commands
                     .entity(*entity)
-                    .insert(IsMoving::default().with_volume(2.));
+                    .insert(IsMoving::default().with_volume(1.2));
                 (animations.walk, 2.)
             }
         };

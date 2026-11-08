@@ -29,6 +29,7 @@ pub use strum::{EnumIter, IntoEnumIterator as _};
 pub use bevy::ecs::lifecycle::HookContext;
 pub use bevy::ecs::world::DeferredWorld;
 pub use bevy::input::common_conditions::{input_just_pressed, input_toggle_active};
+pub use bevy::light::{NotShadowCaster, NotShadowReceiver};
 pub use bevy::picking::pointer::PointerInteraction;
 pub use bevy::platform::collections::{HashMap, HashSet};
 pub use bevy::prelude::*;

@@ -25,7 +25,7 @@ const FIRST_MONTH: u8 = 1;
 
 pub const FIRST_INGAME_DAY: usize = (FIRST_DAY + FIRST_MONTH * 28) as _;
 
-const WEEK_DAYS: [&str; 7] = [
+pub const WEEK_DAYS: [&str; 7] = [
     "Monday",
     "Tuesday",
     "Wednesday",
@@ -111,9 +111,12 @@ impl GameManager {
         WEEK_DAYS[self.day % 28 % 7]
     }
 
-    pub fn game_month(&self) -> &'static str {
-        let month = self.day / 28;
-        MONTHS[month % 12]
+    pub fn game_month(&self) -> usize {
+        self.day / 28
+    }
+
+    pub fn game_month_str(&self) -> &'static str {
+        MONTHS[self.game_month() % 12]
     }
 
     pub fn score_potion(&mut self, is_valid: bool) {
@@ -123,13 +126,44 @@ impl GameManager {
         }
     }
 
+    /// Let us ignore the algorithmic complexity here
+    fn game_day_to_days_played(&self, game_day: usize) -> usize {
+        let mut days_played = 0;
+        for day in FIRST_INGAME_DAY..game_day {
+            if !self.skip_day(day) {
+                days_played += 1;
+            }
+        }
+        days_played
+    }
+
+    pub fn get_score(&self, game_day: usize) -> Option<Scores> {
+        let days_played = self.game_day_to_days_played(game_day);
+        if days_played <= self.days_played {
+            Some(self.scores[days_played])
+        } else {
+            None
+        }
+    }
+
+    pub fn skip_day(&self, game_day: usize) -> bool {
+        let week_day = game_day % 7;
+        if week_day > 4 {
+            return true;
+        }
+
+        let current_month = (game_day / 28) as u8;
+        let current_week_of_month = game_day % 28 / 7;
+        current_month == FIRST_MONTH && (1..=2).contains(&current_week_of_month)
+    }
+
     fn advance_day(&mut self) {
         self.days_played += 1;
         self.scores.push(Scores::default());
+
         self.day += 1;
-        let week_day = self.day % 7;
-        if week_day > 5 {
-            self.day += 2;
+        while self.skip_day(self.day) {
+            self.day += 1;
         }
     }
 }

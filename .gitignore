@@ -5,3 +5,5 @@ target/
 *.aup3*
 *.mp3
 *.m4a
+*.kra
+*.kra~

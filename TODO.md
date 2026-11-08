@@ -1,11 +1,12 @@
 # Priority
-- [ ] Score board
 - [ ] Intro  cutscene
 - [ ] Ending screen
 - [ ] Title screen background scene
 - [ ] Credits
 - [ ] Add sliced flower model
 - [ ] Add more farewell messages
+- [ ] Sleeping
+- [ ] Add invalid potion messages
 
 # Nice-To-Have
 - [ ] Audio fade out when entering settings/menu
@@ -24,3 +25,4 @@
 - [x] Make flowers sliced after cutting them.
 - [x] Add grass source
 - [x] Clock animation
+- [x] Score board
