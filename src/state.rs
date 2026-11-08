@@ -7,6 +7,7 @@ pub fn plugin(app: &mut App) {
     app.init_state::<SettingsOpen>();
     app.add_sub_state::<MainMenuOpen>();
     app.add_sub_state::<GamePaused>();
+    app.add_sub_state::<MonthFinishedScreen>();
 
     app.add_schedule(Schedule::new(TitleScreenUpdate));
     app.add_schedule(Schedule::new(TitleScreenPostUpdate));
@@ -32,6 +33,10 @@ pub enum GameState {
 #[derive(SubStates, Default, Debug, Hash, Eq, PartialEq, Clone, Copy)]
 #[source(GameState = GameState::Game)]
 pub struct GamePaused(pub bool);
+
+#[derive(SubStates, Default, Debug, Hash, Eq, PartialEq, Clone, Copy)]
+#[source(GamePaused = GamePaused(true))]
+pub struct MonthFinishedScreen(pub bool);
 
 #[derive(SubStates, Debug, Hash, Eq, PartialEq, Clone, Copy)]
 #[source(GameState = GameState::Title)]

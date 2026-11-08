@@ -4,8 +4,10 @@ use crate::prelude::*;
 
 mod camera;
 mod cauldron;
+#[cfg(debug_assertions)]
 mod debug;
 mod drawer;
+mod ending;
 mod game_layer;
 mod interaction;
 mod inventory;
@@ -13,6 +15,7 @@ mod item;
 mod liquid;
 mod manager;
 mod npc;
+mod npc_dialogue;
 mod player;
 mod potion;
 mod prelude;
@@ -61,7 +64,6 @@ pub fn main() -> AppExit {
         settings::plugin,
         utils::plugin,
         ui::plugin,
-        debug::plugin,
         scene::plugin,
         sounds::plugin,
         player::plugin,
@@ -70,6 +72,9 @@ pub fn main() -> AppExit {
         drawer::plugin,
         upgrades::plugin,
         sticky_note::plugin,
+        ending::plugin,
+        #[cfg(debug_assertions)]
+        debug::plugin,
     ));
     app.add_plugins((
         manager::plugin,

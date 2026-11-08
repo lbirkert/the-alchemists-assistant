@@ -1,6 +1,5 @@
 # Priority
 - [ ] Intro  cutscene
-- [ ] Ending screen
 - [ ] Title screen background scene
 - [ ] Credits
 - [ ] Add sliced flower model
@@ -26,3 +25,4 @@
 - [x] Add grass source
 - [x] Clock animation
 - [x] Score board
+- [x] Ending screen

@@ -1,10 +1,14 @@
 use crate::{
     prelude::*,
+    state::MonthFinishedScreen,
     ui::{FocusableItems, button},
 };
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(OnEnter(GamePaused(true)), setup);
+    app.add_systems(
+        OnEnter(GamePaused(true)),
+        setup.run_if(not(in_state(MonthFinishedScreen(true)))),
+    );
     app.add_systems(
         OnEnter(SettingsOpen(false)),
         setup.run_if(in_state(GamePaused(true))),

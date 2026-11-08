@@ -55,7 +55,9 @@ pub struct GameManager {
     /// Current day number in game time.
     pub day: usize,
     /// Number of days actually played (starts at zero, advances after each day)
-    pub days_played: usize,
+    days_played: usize,
+    /// Number of days played this month
+    days_played_this_month: usize,
     /// A looping timer tracking the current days time
     pub day_time: Timer,
     pub day_state: DayState,
@@ -85,6 +87,26 @@ pub struct Scores {
     pub invalid_potions: usize,
 }
 
+impl std::ops::Add for Scores {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            potions_submitted: self.potions_submitted + rhs.potions_submitted,
+            invalid_potions: self.invalid_potions + rhs.invalid_potions,
+        }
+    }
+}
+
+impl std::iter::Sum<Self> for Scores {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        let mut sum = Self::default();
+        for score in iter {
+            sum = sum + score;
+        }
+        sum
+    }
+}
+
 impl GameManager {
     pub fn should_start_day(&self) -> bool {
         (DAY_START_HOUR..DAY_END_HOUR).contains(&self.game_hour())
@@ -103,6 +125,7 @@ impl GameManager {
         (self.day_time.fraction() * 24.).floor() as _
     }
 
+    /// Get the current day of the month (from 1 to 28).
     pub fn game_day_of_month(&self) -> u8 {
         (self.day % 28 + 1) as _
     }
@@ -126,7 +149,6 @@ impl GameManager {
         }
     }
 
-    /// Let us ignore the algorithmic complexity here
     fn game_day_to_days_played(&self, game_day: usize) -> usize {
         let mut days_played = 0;
         for day in FIRST_INGAME_DAY..game_day {
@@ -146,6 +168,33 @@ impl GameManager {
         }
     }
 
+    pub fn is_last_working_day_of_month(&self, game_day: usize) -> bool {
+        if self.skip_day(game_day) {
+            return false;
+        }
+        let day_of_month = self.day % 28;
+        let remaining_days_this_month = 28 - day_of_month;
+        for day in game_day + 1..game_day + remaining_days_this_month {
+            if !self.skip_day(day) {
+                return false;
+            }
+        }
+        true
+    }
+
+    /// This returns:
+    /// - The total scores of this month
+    /// - The combined scores of the first half of the working days
+    /// - The combined scores of the second half of the working days
+    pub fn get_current_month_scores(&self) -> (Scores, Scores, Scores) {
+        let first_workday_index = self.scores.len() - self.days_played_this_month;
+        let scores = &self.scores[first_workday_index..];
+        let first_half_scores = scores[..scores.len() / 2].iter().copied().sum();
+        let second_half_scores = scores[scores.len() / 2..].iter().copied().sum();
+        let total_scores = first_half_scores + second_half_scores;
+        (total_scores, first_half_scores, second_half_scores)
+    }
+
     pub fn skip_day(&self, game_day: usize) -> bool {
         let week_day = game_day % 7;
         if week_day > 4 {
@@ -159,11 +208,18 @@ impl GameManager {
 
     fn advance_day(&mut self) {
         self.days_played += 1;
+        self.days_played_this_month += 1;
         self.scores.push(Scores::default());
+
+        let day_of_month = self.day % 28;
 
         self.day += 1;
         while self.skip_day(self.day) {
             self.day += 1;
+        }
+
+        if self.day % 28 < day_of_month {
+            self.days_played_this_month = 0;
         }
     }
 }
@@ -172,6 +228,7 @@ pub fn reset_game_manager(mut manager: Single<&mut GameManager>) {
     let GameManager {
         day,
         days_played,
+        days_played_this_month,
         day_time,
         day_state,
         recipes,
@@ -179,6 +236,7 @@ pub fn reset_game_manager(mut manager: Single<&mut GameManager>) {
     } = &mut **manager;
     *day = FIRST_INGAME_DAY;
     *days_played = 0;
+    *days_played_this_month = 0;
     *day_time = Timer::new(Duration::from_secs(DAY_DURATION), TimerMode::Repeating);
     day_time.set_elapsed(Duration::from_secs_f32(
         DAY_DURATION as f32 * DAY_START_HOUR as f32 / 24.,

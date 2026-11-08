@@ -13,12 +13,12 @@ use bevy::{picking::backend::HitData, world_serialization::WorldInstanceReady};
 use bevy_easings::{EaseMethod, EasingComponent};
 
 use crate::{
+    ending::MonthEnded,
     manager::DayState,
-    potion::PotionReport,
     prelude::*,
-    recipe::GREETINGS,
     scene::{NpcStickyNotes, NpcTable},
     sounds::movement::IsMoving,
+    state::MonthFinishedScreen,
     utils::Billboarded,
 };
 
@@ -90,6 +90,7 @@ enum MessageContext {
     None,
     StartDay,
     EndDay,
+    EndMonth,
 }
 
 #[derive(Reflect, Clone, Debug)]
@@ -127,9 +128,8 @@ fn update_idle_npc(
 
     match manager.day_state {
         DayState::Started => {
-            let mut rng = rand::rng();
             npc.state = NpcState::say_to_player(
-                GREETINGS.choose(&mut rng).unwrap(),
+                NpcDialogue::generate_greeting(&manager),
                 MessageContext::StartDay,
             );
             manager.day_state = DayState::Running;
@@ -137,14 +137,19 @@ fn update_idle_npc(
         DayState::Running => {
             if manager.should_end_day() {
                 info!("It is {} o´clock, ending day", manager.game_hour());
-                npc.state_start = time.elapsed_secs();
-                npc.state = NpcState::say_to_player(
-                    "It is evening already.\n\
-                        I will go to sleep now.\n\
-                        You should too.",
-                    MessageContext::EndDay,
-                );
-                // TODO: proper messages
+                if manager.is_last_working_day_of_month(manager.day) {
+                    npc.state_start = time.elapsed_secs();
+                    npc.state = NpcState::say_to_player(
+                        NpcDialogue::generate_farewell_last_of_month(&manager),
+                        MessageContext::EndMonth,
+                    );
+                } else {
+                    npc.state_start = time.elapsed_secs();
+                    npc.state = NpcState::say_to_player(
+                        NpcDialogue::generate_farewell(&manager),
+                        MessageContext::EndDay,
+                    );
+                }
 
                 return;
             }
@@ -296,19 +301,16 @@ fn update_walking_npc(
 
                 debug!("PotionReport: {report:#?}");
 
-                match report {
-                    PotionReport::Valid => NpcState::Idle,
-                    PotionReport::WrongOrder => NpcState::say_to_player(
-                        "Your potion seems correct but on closer inspection, something is off.",
-                        MessageContext::None,
-                    ),
-                    PotionReport::Invalid { .. } => {
-                        NpcState::say_to_player("Invalid potion", MessageContext::None)
-                    }
+                match NpcDialogue::generate_potion_report(&manager, &report) {
+                    Some(message) => NpcState::say_to_player(message, MessageContext::None),
+                    None => NpcState::Idle,
                 }
             }
             WalkOutOfRoomReason::SayToPlayer(msg) => {
-                if matches!(msg.context, MessageContext::EndDay) {
+                if matches!(
+                    msg.context,
+                    MessageContext::EndDay | MessageContext::EndMonth
+                ) {
                     manager.day_state = DayState::Ended;
                 }
 
@@ -319,7 +321,12 @@ fn update_walking_npc(
     };
 }
 
-fn update_speaking_npc(manager: Single<&GameManager>, mut npc: Single<&mut Npc>, time: Res<Time>) {
+fn update_speaking_npc(
+    manager: Single<&GameManager>,
+    mut npc: Single<&mut Npc>,
+    time: Res<Time>,
+    mut ending: MessageWriter<MonthEnded>,
+) {
     if manager.day_state == DayState::Ended {
         return;
     }
@@ -336,7 +343,10 @@ fn update_speaking_npc(manager: Single<&GameManager>, mut npc: Single<&mut Npc>,
 
     // Set speaking duration based on amount of spoken words.
     let mut duration = 3. + msg.message.split_whitespace().count() as f32 * 0.3;
-    if let MessageContext::EndDay = msg.context {
+    if matches!(
+        msg.context,
+        MessageContext::EndDay | MessageContext::EndMonth
+    ) {
         // Show bye messages always longer.
         duration *= 2.;
     }
@@ -345,6 +355,10 @@ fn update_speaking_npc(manager: Single<&GameManager>, mut npc: Single<&mut Npc>,
     let now = time.elapsed_secs();
     if now - npc.state_start <= duration {
         return;
+    }
+
+    if matches!(msg.context, MessageContext::EndMonth) {
+        ending.write(MonthEnded(manager.game_month_str()));
     }
 
     npc.state = NpcState::WalkOutOfRoom(WalkOutOfRoomReason::SayToPlayer(msg.clone()));

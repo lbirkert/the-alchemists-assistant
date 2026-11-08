@@ -33,8 +33,8 @@ pub(super) fn plugin(app: &mut App) {
         draw_mesh_intersections.run_if(input_toggle_active(DEBUG_ENABLED_DEFAULT, KeyCode::F4)),
     );
 
-    // Game speed
-    app.add_systems(Update, game_speed);
+    // Game speed/time
+    app.add_systems(Update, (game_speed, skip_day));
 }
 
 fn toggle_physics_gizmo(mut store: ResMut<GizmoConfigStore>) {
@@ -88,5 +88,11 @@ fn game_speed(
             time.set_relative_speed(*speed as _);
             debug!("Set the game speed to {}", *speed);
         }
+    }
+}
+
+fn skip_day(mut manager: ResMut<GameManager>, input: Res<ButtonInput<KeyCode>>) {
+    if input.pressed(KeyCode::KeyT) && input.just_pressed(KeyCode::KeyN) {
+        manager.day_time.almost_finish();
     }
 }
