@@ -40,16 +40,12 @@ impl NpcDialogue {
         )
     }
 
-    pub fn generate_potion_report(
-        manager: &GameManager,
-        report: &PotionReport,
-    ) -> Option<impl ToString> {
+    pub fn generate_potion_report(report: &PotionReport, recipe: &Recipe) -> Option<String> {
+        // TODO: we should also later add why the potion was good/wrong
         Some(match report {
-            PotionReport::Valid => return None,
-            PotionReport::WrongOrder => {
-                "Your potion seems correct but on closer inspection, something is off."
-            }
-            PotionReport::Invalid { .. } => "Invalid potion",
+            PotionReport::Valid => format!("{}", recipe.positive_result),
+            PotionReport::WrongOrder => format!("{}", recipe.negative_result),
+            PotionReport::Invalid { .. } => format!("{}", recipe.negative_result),
         })
     }
 }

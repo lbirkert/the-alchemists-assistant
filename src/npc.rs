@@ -300,7 +300,7 @@ fn update_walking_npc(
 
                 debug!("PotionReport: {report:#?}");
 
-                match NpcDialogue::generate_potion_report(&manager, &report) {
+                match NpcDialogue::generate_potion_report(&report, recipe) {
                     Some(message) => NpcState::say_to_player(message, MessageContext::None),
                     None => NpcState::Idle,
                 }
