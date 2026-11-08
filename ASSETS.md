@@ -29,4 +29,4 @@ https://cc0-textures.com/t/cc0t-paving-stones-127|CC0|Cutscene: Floor.
 
 
 All other models that have been used have been created from scratch in blender.
-All other textures are drawn in either blender or inkscape.
+All other textures have been drawn in either blender or inkscape.
