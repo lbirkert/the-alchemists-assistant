@@ -8,8 +8,9 @@ const BUTTON_COLOR_BACKGROUND: Color = Color::NONE;
 
 #[derive(Component, FromTemplate, Reflect, Clone, Copy)]
 #[reflect(Component)]
-struct MenuButton {
-    text_entity: Entity,
+pub struct MenuButton {
+    pub text_entity: Entity,
+    pub do_not_offset: bool,
 }
 
 pub(super) fn button(label: &'static str) -> impl Scene {
@@ -51,6 +52,7 @@ fn update_menu_buttons(
             false => BUTTON_COLOR_BACKGROUND,
         };
         let margin_right = match is_active {
+            true if button.do_not_offset => px(0),
             true => px(-20),
             false => px(0),
         };

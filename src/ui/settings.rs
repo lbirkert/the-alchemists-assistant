@@ -44,11 +44,11 @@ fn setup(mut commands: Commands) {
 
 fn close_settings(
     _event: On<Activate>,
-    mut menu: Option<ResMut<NextState<MainMenuOpen>>>,
+    mut title: Option<ResMut<NextState<TitleScreenState>>>,
     mut settings: ResMut<NextState<SettingsOpen>>,
 ) {
-    if let Some(menu) = &mut menu {
-        menu.set(MainMenuOpen(true));
+    if let Some(title) = &mut title {
+        title.set(TitleScreenState::MainMenu);
     }
     settings.set(SettingsOpen(false));
 }

@@ -1,7 +1,6 @@
 # Priority
 - [ ] Intro  cutscene
 - [ ] Title screen background scene
-- [ ] Credits
 - [ ] Add sliced flower model
 
 ## Npc
@@ -28,3 +27,4 @@
 - [x] Score board
 - [x] Ending screen
 - [x] Sleeping
+- [x] Credits

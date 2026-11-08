@@ -1,4 +1,5 @@
 use bevy::window::{CursorGrabMode, CursorOptions, PrimaryWindow};
+#[cfg(debug_assertions)]
 use bevy_inspector_egui::bevy_egui::PrimaryEguiContext;
 
 use crate::prelude::*;

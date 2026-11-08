@@ -13,8 +13,8 @@ pub use crate::recipe::Recipe;
 pub use crate::scene::EnvironmentObject;
 pub use crate::settings::KeyBindings;
 pub use crate::state::{
-    CutScene, GamePaused, GamePostUpdate, GameState, GameUpdate, MainMenuOpen, ON_GAME_ENTER,
-    ON_GAME_EXIT, SettingsOpen, TitleScreenPostUpdate, TitleScreenUpdate,
+    CutScene, GamePaused, GamePostUpdate, GameState, GameUpdate, ON_GAME_ENTER, ON_GAME_EXIT,
+    SettingsOpen, TitleScreenPostUpdate, TitleScreenState, TitleScreenUpdate,
 };
 pub use crate::sticky_note::StickyNote;
 pub use crate::upgrades::{GameUpgrades, Statistics};

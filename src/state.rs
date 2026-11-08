@@ -5,7 +5,7 @@ use bevy::ecs::schedule::ScheduleLabel;
 pub fn plugin(app: &mut App) {
     app.init_state::<GameState>();
     app.init_state::<SettingsOpen>();
-    app.add_sub_state::<MainMenuOpen>();
+    app.add_sub_state::<TitleScreenState>();
     app.add_sub_state::<GamePaused>();
     app.add_sub_state::<CutScene>();
     app.add_sub_state::<MonthFinishedScreen>();
@@ -43,14 +43,13 @@ pub struct CutScene(pub bool);
 #[source(GamePaused = GamePaused(true))]
 pub struct MonthFinishedScreen(pub bool);
 
-#[derive(SubStates, Debug, Hash, Eq, PartialEq, Clone, Copy)]
+#[derive(SubStates, Debug, Default, Hash, Eq, PartialEq, Clone, Copy)]
 #[source(GameState = GameState::Title)]
-pub struct MainMenuOpen(pub bool);
-
-impl Default for MainMenuOpen {
-    fn default() -> Self {
-        MainMenuOpen(true)
-    }
+pub enum TitleScreenState {
+    #[default]
+    MainMenu,
+    Credits,
+    Settings,
 }
 
 #[derive(States, Default, Debug, Hash, Eq, PartialEq, Clone, Copy)]
