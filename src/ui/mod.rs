@@ -9,6 +9,7 @@ mod focus;
 use focus::{FocusUpdate, FocusableItems};
 
 mod credits;
+mod menu_background;
 mod month_finished;
 mod pause;
 mod settings;
@@ -23,6 +24,7 @@ pub(super) fn plugin(app: &mut App) {
         pause::plugin,
         month_finished::plugin,
         hud::plugin,
+        menu_background::plugin,
     ));
 
     app.add_systems(OnEnter(TitleScreenState::MainMenu), setup);
@@ -88,6 +90,12 @@ fn setup(mut commands: Commands) {
             settings.set(SettingsOpen(true));
         })
     }).id();
+
+    commands.spawn_scene(bsn! {
+        Text::new("The Alchemist's Assistant".to_string())
+
+        ChildOf(title)
+    });
 
     #[cfg(not(target_family = "wasm"))]
     let quit = commands

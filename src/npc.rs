@@ -29,8 +29,8 @@ pub fn plugin(app: &mut App) {
             update_idle_npc,
             update_speaking_npc,
             listen_for_bell,
-            update_npc_animation,
             update_npc_speech_text,
+            update_npc_animation,
         ),
     );
 }
@@ -419,7 +419,7 @@ struct NpcTargetPositions {
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 #[type_path = "npc"]
-struct NpcRightHand;
+pub struct NpcRightHand;
 
 fn instance_ready_find_target_positions(
     event: On<WorldInstanceReady>,
@@ -459,15 +459,15 @@ struct NpcArmature;
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-struct NpcAnimations {
-    idle: AnimationNodeIndex,
-    walk: AnimationNodeIndex,
-    stir: AnimationNodeIndex,
+pub struct NpcAnimations {
+    pub idle: AnimationNodeIndex,
+    pub walk: AnimationNodeIndex,
+    pub stir: AnimationNodeIndex,
 }
 
 #[derive(Component, Reflect, Default, Debug, Clone, PartialEq, Eq)]
 #[reflect(Component)]
-enum NpcAnimationState {
+pub enum NpcAnimationState {
     #[default]
     Idle,
     Walking,
