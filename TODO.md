@@ -14,7 +14,6 @@
 - [ ] Cauldron stirring
 - [ ] Cauldron visuals / audio
 - [ ] Extra animation for mortar stomping
-- [ ] Settings
 - [ ] Music
 - [ ] Change sliced garlic model to fit into mortar.
 
@@ -28,3 +27,4 @@
 - [x] Ending screen
 - [x] Sleeping
 - [x] Credits
+- [x] Settings
