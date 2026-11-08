@@ -41,12 +41,20 @@ pub fn main() -> AppExit {
                     name: Some("the-alchemists-assistant".to_string()),
                     mode: bevy::window::WindowMode::BorderlessFullscreen(MonitorSelection::Current),
                     present_mode: bevy::window::PresentMode::AutoVsync,
+                    fit_canvas_to_parent: true,
                     ..Default::default()
                 }),
                 ..Default::default()
             })
             .set(AudioPlugin {
                 default_spatial_scale: bevy::audio::SpatialScale(Vec3::ONE * 0.3),
+                ..Default::default()
+            })
+            .set(AssetPlugin {
+                // Wasm builds will check for meta files (that don't exist) if this isn't set.
+                // This causes errors and even panics on web build on itch.
+                // See https://github.com/bevyengine/bevy_github_ci_template/issues/48.
+                meta_check: bevy::asset::AssetMetaCheck::Never,
                 ..Default::default()
             }),
     );

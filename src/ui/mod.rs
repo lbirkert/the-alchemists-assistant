@@ -63,6 +63,8 @@ fn setup(mut commands: Commands) {
             settings.set(SettingsOpen(true));
         })
     }).id();
+
+    #[cfg(not(target_family = "wasm"))]
     let quit = commands
         .spawn_scene(bsn! {
             @button("Quit")
@@ -72,7 +74,10 @@ fn setup(mut commands: Commands) {
         })
         .id();
 
+    #[cfg(not(target_family = "wasm"))]
     let focusable = FocusableItems::new([play, settings, quit]);
+    #[cfg(target_family = "wasm")]
+    let focusable = FocusableItems::new([play, settings]);
     commands.entity(title).add_children(&focusable.items);
 
     commands.insert_resource(focusable);
