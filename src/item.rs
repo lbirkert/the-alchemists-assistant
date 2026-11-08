@@ -142,7 +142,12 @@ impl Item {
                 ItemState::FineGrinded => "FineGrindedGarlic.glb",
             },
             ItemKind::Grass => "Grass.glb",
-            ItemKind::Flowers => "Flowers.glb",
+            ItemKind::Flowers => match self.state {
+                ItemState::Unprocessed => "Flowers.glb",
+                ItemState::Sliced => "SlicedFlowers.glb",
+                ItemState::Grinded => panic!(),
+                ItemState::FineGrinded => "FineGrindedFlowers.glb",
+            },
             ItemKind::Potion => "Potion.glb",
             ItemKind::Crystal => match self.state {
                 ItemState::Unprocessed => "Crystal.glb",

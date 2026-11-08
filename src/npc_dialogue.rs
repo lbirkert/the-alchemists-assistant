@@ -44,11 +44,11 @@ impl NpcDialogue {
 
         let mut rng = rand::rng();
 
-        if score >= 7 {
+        if score >= 6 {
             return POSITIVE_GREETINGS.choose(&mut rng).unwrap();
         }
 
-        if score >= 4 {
+        if score >= 3 {
             return NEUTRAL_GREETINGS.choose(&mut rng).unwrap();
         }
 

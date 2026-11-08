@@ -135,10 +135,12 @@ impl Station {
         match item {
             Item {
                 state: ItemState::Unprocessed,
+                kind: ItemKind::Garlic | ItemKind::Crystal,
                 ..
             } => item.grinded(),
             Item {
                 state: ItemState::Sliced | ItemState::Grinded,
+                kind: ItemKind::Garlic | ItemKind::Crystal | ItemKind::Flowers,
                 ..
             } => item.fine_grinded(),
             _ => item,
@@ -149,6 +151,7 @@ impl Station {
         match item {
             Item {
                 state: ItemState::Unprocessed,
+                kind: ItemKind::Garlic | ItemKind::Flowers,
                 ..
             } => item.sliced(),
             _ => item,

@@ -113,7 +113,7 @@ impl Recipe {
         for is_washed in washed.iter().copied() {
             for state in states.iter().copied() {
                 if upgrades.item_is_locked(&Item {
-                    kind: ItemKind::Garlic,
+                    kind,
                     state,
                     is_washed,
                     potion: None,
@@ -135,6 +135,16 @@ impl Recipe {
         ingredients
     }
 
+    fn get_crystal_ingredients(upgrades: &GameUpgrades) -> Vec<Ingredient> {
+        const IS_WASHED: [bool; 2] = [false, true];
+        const STATES: [ItemState; 3] = [
+            ItemState::Unprocessed,
+            ItemState::Grinded,
+            ItemState::FineGrinded,
+        ];
+        Self::gather_ingredients(upgrades, ItemKind::Crystal, &IS_WASHED, &STATES)
+    }
+
     fn get_garlic_ingredients(upgrades: &GameUpgrades) -> Vec<Ingredient> {
         const IS_WASHED: [bool; 2] = [false, true];
         const STATES: [ItemState; 4] = [
@@ -146,7 +156,7 @@ impl Recipe {
         Self::gather_ingredients(upgrades, ItemKind::Garlic, &IS_WASHED, &STATES)
     }
 
-    fn get_flowers_ingredients(upgrades: &GameUpgrades) -> Vec<Ingredient> {
+    fn get_flower_ingredients(upgrades: &GameUpgrades) -> Vec<Ingredient> {
         const IS_WASHED: [bool; 1] = [false];
         const STATES: [ItemState; 3] = [
             ItemState::Unprocessed,
@@ -157,11 +167,19 @@ impl Recipe {
         Self::gather_ingredients(upgrades, ItemKind::Flowers, &IS_WASHED, &STATES)
     }
 
+    fn push_if_not_empty(src: Vec<Ingredient>, dst: &mut Vec<Vec<Ingredient>>) {
+        if src.is_empty() {
+            return;
+        }
+
+        dst.push(src);
+    }
+
     fn get_ingredients(upgrades: &GameUpgrades) -> Vec<Vec<Ingredient>> {
-        let ingredients = vec![
-            Self::get_garlic_ingredients(upgrades),
-            Self::get_flowers_ingredients(upgrades),
-        ];
+        let mut ingredients = Vec::new();
+        Self::push_if_not_empty(Self::get_garlic_ingredients(upgrades), &mut ingredients);
+        Self::push_if_not_empty(Self::get_flower_ingredients(upgrades), &mut ingredients);
+        Self::push_if_not_empty(Self::get_crystal_ingredients(upgrades), &mut ingredients);
         ingredients
     }
 
@@ -203,7 +221,7 @@ impl Recipe {
         let ingredient_texts = ingredient_texts.join("\n");
         let stir_duration = rand::random_range(10..=30);
 
-        let stir_text = format!("Stir for {} seconds and fill in a flask!", stir_duration);
+        let stir_text = format!("Fill in a flask and submit.");
 
         let name_id = rand::random_range(0..NAMES.len());
         let (ref gender, name) = NAMES[name_id];
