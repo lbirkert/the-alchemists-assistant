@@ -207,7 +207,9 @@ impl GameManager {
     }
 
     pub fn sleep_through_night(&mut self) {
-        self.advance_day();
+        if self.game_hour() >= DAY_END_HOUR {
+            self.advance_day();
+        }
         self.day_time.set_elapsed(Duration::from_secs(
             DAY_DURATION / 24 * DAY_START_HOUR as u64,
         ));
