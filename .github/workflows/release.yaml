@@ -46,7 +46,7 @@ on:
 # Cancel the release workflow when a more recent workflow begins.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 # Configure the release workflow by editing the following values.
 env:
