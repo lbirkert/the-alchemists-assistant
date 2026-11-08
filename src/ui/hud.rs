@@ -19,6 +19,16 @@ pub(super) fn plugin(app: &mut App) {
             bevy_easings::custom_ease_system::<Virtual, FontSizeWrapper>,
         ),
     );
+
+    #[cfg(debug_assertions)]
+    app.add_systems(Update, |query: Query<&Cauldron>| {
+        if query.count() > 1 {
+            panic!(
+                "having more than one cauldrons breaks the hud: we have {}",
+                query.count()
+            );
+        }
+    });
 }
 
 #[derive(Component, Reflect, Clone, Copy, Default)]
