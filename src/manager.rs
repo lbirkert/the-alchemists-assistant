@@ -65,7 +65,7 @@ pub struct GameManager {
     pub recipes: Vec<Recipe>,
 
     /// The scores of each played day. This list is indexable by `days_played`.
-    scores: Vec<Scores>,
+    pub scores: Vec<Scores>,
 }
 
 #[derive(Reflect, Default, Debug, Clone, Copy, PartialEq, Eq)]
