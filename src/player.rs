@@ -20,23 +20,32 @@ pub(super) fn plugin(app: &mut App) {
             update_pointer_pos,
             update_player_item_preview,
             fix_fall_to_void,
-            player_look.before(player_move),
+            player_look
+                .before(player_move)
+                .run_if(not(in_state(CutScene(true)))),
         ),
     );
 
-    app.add_systems(FixedUpdate, (apply_linear_damping, player_move).chain());
+    app.add_systems(
+        FixedUpdate,
+        (
+            apply_linear_damping,
+            player_move.run_if(not(in_state(CutScene(true)))),
+        )
+            .chain(),
+    );
 }
 
 const PLAYER_SPAWN_POS: Vec3 = Vec3::new(2., 2., 0.);
 
 #[derive(Component, Reflect, Default, Clone, Copy)]
 #[reflect(Component)]
-struct Player;
+pub struct Player;
 
 #[derive(Component, Reflect, Default, Clone, Copy)]
 #[reflect(Component)]
 /// Marker component for the camera
-struct PlayerEyes;
+pub struct PlayerEyes;
 
 #[derive(Component, Reflect, Default, Clone, Copy)]
 #[reflect(Component)]

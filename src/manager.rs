@@ -206,6 +206,13 @@ impl GameManager {
         current_month == FIRST_MONTH && (1..=2).contains(&current_week_of_month)
     }
 
+    pub fn sleep_through_night(&mut self) {
+        self.advance_day();
+        self.day_time.set_elapsed(Duration::from_secs(
+            DAY_DURATION / 24 * DAY_START_HOUR as u64,
+        ));
+    }
+
     fn advance_day(&mut self) {
         self.days_played += 1;
         self.days_played_this_month += 1;

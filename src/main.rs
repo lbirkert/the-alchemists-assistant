@@ -22,6 +22,7 @@ mod prelude;
 mod recipe;
 mod scene;
 mod settings;
+mod sleeping;
 mod sounds;
 mod state;
 mod sticky_note;
@@ -78,6 +79,7 @@ pub fn main() -> AppExit {
         drawer::plugin,
         upgrades::plugin,
         sticky_note::plugin,
+        sleeping::plugin,
         ending::plugin,
     ));
     app.add_plugins((
