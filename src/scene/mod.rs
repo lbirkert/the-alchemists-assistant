@@ -21,6 +21,7 @@ pub(super) fn plugin(app: &mut App) {
     RigidBody::Static,
     CollisionLayers::new(GameLayer::Environment, GameLayer::all_bits())
 )]
+/// TODO! Unused?
 pub struct EnvironmentObject;
 
 #[derive(Component, Reflect, Default)]
@@ -29,6 +30,7 @@ pub struct EnvironmentObject;
     ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES),
     EnvironmentObject
 )]
+#[type_path = "the_alchemist_assistant::scene"]
 struct ColliderFromMesh;
 
 #[derive(Component, Reflect, Default)]
@@ -46,6 +48,7 @@ struct ColliderFromMesh;
         ..Default::default()
     },
 )]
+#[type_path = "the_alchemist_assistant::scene"]
 struct SunLight;
 
 #[derive(Component, Reflect, Default)]
@@ -61,6 +64,7 @@ struct SunLight;
         ..Default::default()
     },
 )]
+#[type_path = "the_alchemist_assistant::scene"]
 struct CauldronLight;
 
 #[derive(Component, Reflect, Default)]
@@ -73,26 +77,31 @@ struct CauldronLight;
         rate: 0.0,
     },
 )]
+#[type_path = "the_alchemist_assistant::scene"]
 struct Tree;
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 #[require(Interactable::Bell)]
+#[type_path = "the_alchemist_assistant::scene"]
 pub struct NpcBell;
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[type_path = "the_alchemist_assistant::scene"]
 pub struct NpcStickyNotes;
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 #[require(Interactable::NpcTable)]
+#[type_path = "the_alchemist_assistant::scene"]
 pub struct NpcTable {
     pub potions: Vec<(Entity, PotionData)>,
 }
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[type_path = "the_alchemist_assistant::scene"]
 struct GameClockHand;
 
 impl NpcTable {

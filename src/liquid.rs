@@ -7,6 +7,7 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Clone, Debug)]
 #[reflect(Component)]
+#[type_path = "the_alchemist_assistant::liquid"]
 pub struct LiquidController {
     pub color: Color,
     pub is_visible: bool,
@@ -15,6 +16,7 @@ pub struct LiquidController {
 #[derive(Component, Reflect, Clone, Debug)]
 #[reflect(Component)]
 #[component(on_remove)]
+#[type_path = "the_alchemist_assistant::liquid"]
 pub struct Liquid {
     material_handle: Option<Handle<StandardMaterial>>,
 }

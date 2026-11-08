@@ -9,6 +9,7 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component, Reflect, Debug, Clone, Default)]
 #[reflect(Component, Default)]
 #[require(Interactable::Drawer)]
+#[type_path = "the_alchemist_assistant::drawer"]
 pub struct Drawer {
     pub opened: bool,
     #[reflect(ignore)]

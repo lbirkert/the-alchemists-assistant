@@ -7,6 +7,7 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 #[component(on_add)]
+#[type_path = "the_alchemist_assistant::scene::score_board"]
 struct ScoreBoard;
 
 #[derive(Component, Reflect, Default, Debug, Clone, Copy)]

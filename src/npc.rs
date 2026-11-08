@@ -39,6 +39,7 @@ pub fn plugin(app: &mut App) {
 #[derive(Component, Reflect, Clone, Default)]
 #[reflect(Component)]
 #[component(on_add)]
+#[type_path = "the_alchemist_assistant::npc"]
 pub struct Npc {
     state_start: f32, // state starting time
     pub state: NpcState,
@@ -381,14 +382,17 @@ fn walk_npc(transform: &mut Transform, time: &Time, target_pos: Vec3) -> bool {
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[type_path = "the_alchemist_assistant::npc"]
 struct NpcPosOutside;
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[type_path = "the_alchemist_assistant::npc"]
 struct NpcPosInsideSpeakToPlayer;
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[type_path = "the_alchemist_assistant::npc"]
 struct NpcPosInsideInteractWithTable;
 
 #[derive(Component, Reflect, Default, Debug, Clone)]
@@ -432,6 +436,7 @@ fn instance_ready_find_target_positions(
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[type_path = "the_alchemist_assistant::npc"]
 struct NpcArmature;
 
 #[derive(Component, Reflect, Default)]

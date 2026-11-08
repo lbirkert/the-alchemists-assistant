@@ -14,16 +14,19 @@ pub const ITEM_SIZE: f32 = 0.3;
 #[derive(Component, Default, Reflect, Debug, Clone)]
 #[reflect(Component)]
 #[require(Interactable::ItemPlaceable)]
+#[type_path = "the_alchemist_assistant::item"]
 pub struct ItemPlaceable;
 
 #[derive(Component, Default, Reflect, Debug, Clone)]
 #[reflect(Component)]
 #[require(Interactable::ItemDiscardable)]
+#[type_path = "the_alchemist_assistant::item"]
 pub struct ItemDiscardable;
 
 #[derive(Component, Reflect, Debug, Clone)]
 #[reflect(Component)]
 #[component(on_add)]
+#[type_path = "the_alchemist_assistant::item"]
 pub struct ItemSource {
     pub item: Item,
 }

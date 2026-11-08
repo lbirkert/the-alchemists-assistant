@@ -11,6 +11,7 @@ pub fn plugin(app: &mut App) {
     is_visible: false,
     color: Color::srgb(1.0, 0.0, 0.0),
 })]
+#[type_path = "the_alchemist_assistant::cauldron"]
 pub struct Cauldron {
     pub items: Vec<Item>,
 }

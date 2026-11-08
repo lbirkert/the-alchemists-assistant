@@ -1,5 +1,5 @@
 run *FLAGS:
-	RUST_LOG=info,the_alchemist_assistant=debug cargo run -- {{FLAGS}}
+	RUST_LOG=info,the_alchemists_assistant=debug cargo run -- {{FLAGS}}
 
 # Might now work, see <https://github.com/rust-lang/rustc_codegen_cranelift/issues/1707>
 run-cranelift *FLAGS:

@@ -10,6 +10,7 @@ pub(super) fn plugin(app: &mut App) {
 #[reflect(Component, Default)]
 #[require(Interactable::Station)]
 #[component(on_add)]
+#[type_path = "the_alchemist_assistant::scene::stations"]
 pub struct ProcessingStation {
     pub state: StationState,
     pub kind: Station,
@@ -42,6 +43,7 @@ pub enum StationState {
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component, Default)]
+#[type_path = "the_alchemist_assistant::scene::stations"]
 struct StationArmature;
 
 #[derive(Component, Reflect)]

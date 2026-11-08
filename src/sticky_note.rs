@@ -14,6 +14,7 @@ pub fn plugin(app: &mut App) {
 #[reflect(Default)]
 #[reflect(Component)]
 #[component(on_remove)]
+#[type_path = "the_alchemist_assistant::sticky_note"]
 pub struct NoteMaterial {
     image_handle: Option<Handle<Image>>,
     material_handle: Option<Handle<StandardMaterial>>,
@@ -93,6 +94,7 @@ impl StickyNote {
 #[derive(Component, Reflect, Default, Clone)]
 #[reflect(Component)]
 #[require(Interactable::StickyNotePlaceable)]
+#[type_path = "the_alchemist_assistant::sticky_note"]
 pub struct StickyNotePlaceable;
 
 fn pickup_sticky_note(
