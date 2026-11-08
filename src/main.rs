@@ -38,6 +38,8 @@ pub fn main() -> AppExit {
                 primary_window: Some(Window {
                     title: "The Alchemists Assistant".to_string(),
                     name: Some("the-alchemists-assistant".to_string()),
+                    mode: bevy::window::WindowMode::BorderlessFullscreen(MonitorSelection::Current),
+                    present_mode: bevy::window::PresentMode::AutoVsync,
                     ..Default::default()
                 }),
                 ..Default::default()
