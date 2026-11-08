@@ -7,10 +7,6 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Clone)]
 #[reflect(Component)]
-#[require(Interactable::Cauldron, LiquidController {
-    is_visible: false,
-    color: Color::srgb(1.0, 0.0, 0.0),
-})]
 #[type_path = "the_alchemist_assistant::cauldron"]
 pub struct Cauldron {
     pub items: Vec<Item>,
