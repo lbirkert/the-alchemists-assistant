@@ -59,6 +59,10 @@ pub fn main() -> AppExit {
 
     app.add_plugins(bevy_easings::EasingsPlugin::default());
 
+    #[cfg(debug_assertions)]
+    // This has the be above our other plugins, as the camera requires the EguiPlugin to be set.
+    app.add_plugins(debug::plugin);
+
     // Our plugins
     app.add_plugins((
         state::plugin,
@@ -75,8 +79,6 @@ pub fn main() -> AppExit {
         upgrades::plugin,
         sticky_note::plugin,
         ending::plugin,
-        #[cfg(debug_assertions)]
-        debug::plugin,
     ));
     app.add_plugins((
         manager::plugin,

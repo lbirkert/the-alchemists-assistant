@@ -1,4 +1,5 @@
 use bevy::window::{CursorGrabMode, CursorOptions, PrimaryWindow};
+use bevy_inspector_egui::bevy_egui::PrimaryEguiContext;
 
 use crate::prelude::*;
 
@@ -10,7 +11,7 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn_scene(bsn! {
+    let mut entity_cmds = commands.spawn_scene(bsn! {
         #PlayerCamera
         Camera3d
         MeshPickingCamera
@@ -20,6 +21,8 @@ fn setup(mut commands: Commands) {
             }
         }
     });
+    #[cfg(debug_assertions)]
+    entity_cmds.insert(PrimaryEguiContext);
 }
 
 fn grab_cursor(mut primary_cursor_options: Single<&mut CursorOptions, With<PrimaryWindow>>) {

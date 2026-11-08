@@ -1,5 +1,8 @@
 use bevy::input::keyboard::Key;
-use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
+use bevy_inspector_egui::{
+    bevy_egui::{EguiGlobalSettings, EguiPlugin},
+    quick::WorldInspectorPlugin,
+};
 
 use crate::prelude::*;
 
@@ -8,6 +11,10 @@ const DEBUG_ENABLED_DEFAULT: bool = false;
 pub(super) fn plugin(app: &mut App) {
     // Inspector
     app.add_plugins(EguiPlugin::default());
+    app.insert_resource(EguiGlobalSettings {
+        auto_create_primary_context: false,
+        ..Default::default()
+    });
     app.add_plugins(
         WorldInspectorPlugin::default()
             .run_if(input_toggle_active(DEBUG_ENABLED_DEFAULT, KeyCode::F1)),
