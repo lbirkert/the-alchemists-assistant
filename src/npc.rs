@@ -416,6 +416,11 @@ struct NpcTargetPositions {
     inside_interact: Vec3,
 }
 
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+#[type_path = "npc"]
+struct NpcRightHand;
+
 fn instance_ready_find_target_positions(
     event: On<WorldInstanceReady>,
     mut commands: Commands,
@@ -457,6 +462,7 @@ struct NpcArmature;
 struct NpcAnimations {
     idle: AnimationNodeIndex,
     walk: AnimationNodeIndex,
+    stir: AnimationNodeIndex,
 }
 
 #[derive(Component, Reflect, Default, Debug, Clone, PartialEq, Eq)]
@@ -465,6 +471,7 @@ enum NpcAnimationState {
     #[default]
     Idle,
     Walking,
+    Stirring,
 }
 
 fn instance_ready_setup_armature(
@@ -475,7 +482,7 @@ fn instance_ready_setup_armature(
     armature: Single<Entity, With<NpcArmature>>,
 ) {
     let (graph, animations) = AnimationGraph::from_clips(
-        (0..3).map(|i| asset_server.load(format!("Alchemist.glb#Animation{i}"))),
+        (0..4).map(|i| asset_server.load(format!("Alchemist.glb#Animation{i}"))),
     );
     let graph_handle = graphs.add(graph);
 
@@ -487,7 +494,8 @@ fn instance_ready_setup_armature(
         AnimationTransitions::new(),
         NpcAnimations {
             idle: animations[0],
-            walk: animations[2],
+            stir: animations[1],
+            walk: animations[3],
         },
     ));
 }
@@ -521,6 +529,7 @@ fn update_npc_animation(
                     .insert(IsMoving::default().with_volume(1.2));
                 (animations.walk, 2.)
             }
+            NpcAnimationState::Stirring => (animations.stir, 0.5),
         };
         **animation_state = new_animation;
         animation_transitions
