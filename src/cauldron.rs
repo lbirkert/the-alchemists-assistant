@@ -7,6 +7,7 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Clone)]
 #[reflect(Component)]
+#[require(Interactable::Cauldron)]
 #[type_path = "the_alchemist_assistant::cauldron"]
 pub struct Cauldron {
     pub items: Vec<Item>,
