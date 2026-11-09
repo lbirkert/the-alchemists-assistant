@@ -177,22 +177,26 @@ fn update_idle_npc(
 
 fn listen_for_bell(
     mut messages: MessageReader<PlayerInteraction>,
+    mut commands: Commands,
     mut npc: Single<&mut Npc>,
     manager: Single<&GameManager>,
     time: Res<Time>,
 ) {
-    if manager.day_state != DayState::Running {
-        return;
-    }
-
     let Some(PlayerInteraction {
         kind: Interactable::Bell,
         hit: HitData { .. },
+        entity,
         ..
     }) = messages.read().next()
     else {
         return;
     };
+
+    commands.spawn_scene(audio_scene(*entity, &["audio/bell/bell.ogg"]));
+
+    if manager.day_state != DayState::Running {
+        return;
+    }
 
     if !matches!(npc.state, NpcState::Idle) {
         return;
@@ -252,6 +256,10 @@ fn update_walking_npc(
                 None => NpcState::WalkOutOfRoom(WalkOutOfRoomReason::NoPotion),
             },
             WalkIntoRoomReason::BringRecipes(recipes) => {
+                commands.spawn_scene(audio_scene(
+                    *npc_sticky_notes,
+                    &["audio/npc/npc_place_recipe.ogg"],
+                ));
                 let mut offset = 0.0; // TODO: also account for existing sticky notes
                 for recipe in recipes.iter() {
                     // spawn the sticky note
@@ -261,7 +269,7 @@ fn update_walking_npc(
                     }
                     .physics_scene(
                         &asset_server,
-                        Transform::from_translation(Vec3::new(0.0, offset, 0.0))
+                        Transform::from_translation(Vec3::new(offset, offset, 0.0))
                             .with_rotation(Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)),
                     );
                     commands

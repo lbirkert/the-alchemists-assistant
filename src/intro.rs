@@ -33,6 +33,12 @@ pub enum ComputerState {
 #[type_path = "scene"]
 struct ComputerScreen;
 
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+#[require(Interactable::IntroComputer)]
+#[type_path = "scene"]
+struct ComputerMouse;
+
 fn set_state_cut_scene(mut cut_scene: ResMut<NextState<CutScene>>) {
     cut_scene.set(CutScene::Intro);
 }
@@ -43,11 +49,13 @@ fn set_state_cut_scene_none(mut cut_scene: ResMut<NextState<CutScene>>) {
 
 fn cycle_textures(
     mut messages: MessageReader<PlayerInteraction>,
+    mut commands: Commands,
     mut intro: ResMut<GameIntro>,
     mut scene: ResMut<NextState<GameScene>>,
     asset_server: Res<AssetServer>,
     query: Query<&MeshMaterial3d<StandardMaterial>, With<ComputerScreen>>,
     mut mats: ResMut<Assets<StandardMaterial>>,
+    mouse: Option<Single<Entity, With<ComputerMouse>>>,
 ) {
     let Some(PlayerInteraction {
         entity,
@@ -58,6 +66,11 @@ fn cycle_textures(
     else {
         return;
     };
+
+    if let Some(mouse) = mouse {
+        commands.spawn_scene(audio_scene(*mouse, &["audio/intro/mouse_click.ogg"]));
+    }
+
     intro.state = match (intro.state, button) {
         (ComputerState::News, MouseButton::Right) => ComputerState::FindJob,
         (ComputerState::FindJob, MouseButton::Right) => ComputerState::Apply,

@@ -1,4 +1,4 @@
-use crate::{drawer::Drawer, prelude::*, sounds::audio_scene};
+use crate::{drawer::Drawer, prelude::*};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(GameUpdate, play_drawer_sound);

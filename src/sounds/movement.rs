@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bevy::audio::Volume;
 
-use crate::{prelude::*, sounds::audio_scene};
+use crate::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(GameUpdate, play_movement_sound);

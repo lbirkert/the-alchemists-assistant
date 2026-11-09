@@ -3,7 +3,6 @@ use bevy::audio::Volume;
 use crate::{
     npc::{Npc, NpcState},
     prelude::*,
-    sounds::audio_scene,
 };
 
 pub(super) fn plugin(app: &mut App) {

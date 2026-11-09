@@ -12,6 +12,7 @@ pub use crate::potion::PotionData;
 pub use crate::recipe::Recipe;
 pub use crate::scene::EnvironmentObject;
 pub use crate::settings::KeyBindings;
+pub use crate::sounds::audio_scene;
 pub use crate::state::{
     CutScene, GamePaused, GamePostUpdate, GameScene, GameState, GameUpdate, ON_GAME_ENTER,
     ON_GAME_EXIT, SettingsOpen, TitleScreenPostUpdate, TitleScreenState, TitleScreenUpdate,

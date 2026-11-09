@@ -16,7 +16,7 @@ pub(super) fn plugin(app: &mut App) {
     ));
 }
 
-fn audio_scene(parent: Entity, sources: &[&'static str]) -> impl Scene {
+pub fn audio_scene(parent: Entity, sources: &[&'static str]) -> impl Scene {
     let mut rng = rand::rng();
     let source = *sources.choose(&mut rng).expect("No audio sources");
     bsn! {
