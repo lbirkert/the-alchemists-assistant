@@ -2,10 +2,10 @@ use bevy::window::{CursorGrabMode, CursorOptions, PrimaryWindow};
 #[cfg(debug_assertions)]
 use bevy_inspector_egui::bevy_egui::PrimaryEguiContext;
 
-use crate::prelude::*;
+use crate::{prelude::*, state::ActualStartup};
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(Startup, setup);
+    app.add_systems(ActualStartup, setup);
 
     app.add_systems(OnEnter(GamePaused(false)), grab_cursor);
     app.add_systems(OnExit(GamePaused(false)), ungrab_cursor);

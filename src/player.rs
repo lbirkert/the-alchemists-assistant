@@ -56,12 +56,17 @@ struct PlayerSpawnPos;
 impl PlayerSpawnPos {
     fn on_add(mut world: DeferredWorld, ctx: HookContext) {
         let pos = world.get::<Transform>(ctx.entity).unwrap().translation;
-        world.commands().run_system_cached_with(
-            |pos: In<Vec3>, mut player_pos: Single<&mut Transform, With<Player>>| {
-                player_pos.translation = pos.0;
-            },
-            pos,
-        );
+        if *world.resource::<State<GameState>>().get() == GameState::Game {
+            world.commands().run_system_cached_with(
+                |pos: In<Vec3>,
+                 mut player_pos: Single<&mut Transform, (With<Player>, Without<Camera3d>)>,
+                 mut camera: Single<&mut Transform, With<Camera3d>>| {
+                    player_pos.translation = pos.0;
+                    **camera = Transform::from_xyz(0., 1., 0.);
+                },
+                pos,
+            );
+        }
     }
 }
 

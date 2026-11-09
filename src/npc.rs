@@ -423,11 +423,16 @@ pub struct NpcRightHand;
 
 fn instance_ready_find_target_positions(
     event: On<WorldInstanceReady>,
+    state: Res<State<GameState>>,
     mut commands: Commands,
     npc_pos_outside: Option<Single<(Entity, &Transform), With<NpcPosOutside>>>,
     npc_pos_speak: Option<Single<(Entity, &Transform), With<NpcPosInsideSpeakToPlayer>>>,
     npc_pos_interact: Option<Single<(Entity, &Transform), With<NpcPosInsideInteractWithTable>>>,
 ) {
+    if *state.get() != GameState::Game {
+        return;
+    }
+
     let Some((e1, outside)) = npc_pos_outside.as_deref() else {
         error!("Failed to find NpcPosOutside");
         return;

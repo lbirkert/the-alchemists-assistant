@@ -11,6 +11,11 @@ pub fn plugin(app: &mut App) {
     app.add_sub_state::<CutScene>();
     app.add_sub_state::<MonthFinishedScreen>();
 
+    app.add_schedule(Schedule::new(ActualStartup));
+    app.world_mut()
+        .resource_mut::<bevy::app::MainScheduleOrder>()
+        .insert_startup_before(StateTransition, ActualStartup);
+
     app.add_schedule(Schedule::new(TitleScreenUpdate));
     app.add_schedule(Schedule::new(TitleScreenPostUpdate));
     app.add_schedule(Schedule::new(GameUpdate));
@@ -72,6 +77,11 @@ pub struct SettingsOpen(pub bool);
 
 pub const ON_GAME_ENTER: OnEnter<GameState> = OnEnter(GameState::Game);
 pub const ON_GAME_EXIT: OnExit<GameState> = OnExit(GameState::Game);
+
+#[derive(ScheduleLabel, Hash, Clone, Copy, Debug, PartialEq, Eq)]
+/// Schedule that actually runs at startup (like [Startup], but runs before [StateTransition]).
+/// See <https://docs.rs/bevy/latest/bevy/app/struct.Main.html>
+pub struct ActualStartup;
 
 #[derive(ScheduleLabel, Hash, Clone, Copy, Debug, PartialEq, Eq)]
 /// Convenience, allows using

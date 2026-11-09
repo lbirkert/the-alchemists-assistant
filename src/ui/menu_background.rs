@@ -21,7 +21,7 @@ struct MenuBackgroundCamera;
 #[reflect(Component)]
 struct Mixer;
 
-fn spawn_scene(mut commands: Commands) {
+fn spawn_scene(mut commands: Commands, camera: Single<Entity, With<Camera3d>>) {
     commands.spawn_scene(bsn! {
         #GameScene
         WorldAssetRoot("TheAlchemistsAssistant.glb#Scene0")
@@ -35,16 +35,7 @@ fn spawn_scene(mut commands: Commands) {
         DespawnOnExit<GameState>(GameState::Title)
     });
 
-    commands.spawn_scene(bsn! {
-        #Camera
-        MenuBackgroundCamera
-        Camera3d
-        Camera {
-            order: 1,
-        }
-        Transform::from_translation(Vec3::splat(0.0))
-        DespawnOnExit<GameState>(GameState::Title)
-    });
+    commands.entity(*camera).insert(Transform::default());
 
     commands.insert_resource(NpcInitialized(false));
 
@@ -92,10 +83,7 @@ fn set_npc_pos(mut npc_transform: Single<&mut Transform, With<Npc>>) {
     *npc_transform.as_mut() = Transform::from_xyz(0.0, 0.0, -1.5);
 }
 
-fn rotate_camera(
-    mut transform: Single<&mut Transform, With<MenuBackgroundCamera>>,
-    time: Res<Time>,
-) {
+fn rotate_camera(mut transform: Single<&mut Transform, With<Camera3d>>, time: Res<Time>) {
     let (rsin, rcos) = (time.elapsed_secs() * 0.1).sin_cos();
     let r = 4.5;
 
