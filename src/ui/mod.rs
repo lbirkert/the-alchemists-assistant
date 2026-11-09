@@ -1,6 +1,6 @@
 use bevy::ui_widgets::Activate;
 
-use crate::prelude::*;
+use crate::{intro::GameIntro, prelude::*};
 
 mod button;
 use button::button;
@@ -70,9 +70,7 @@ fn setup(mut commands: Commands) {
     let play = commands
         .spawn_scene(bsn! {
             @button("Play")
-            on(|_event: On<Activate>, mut next_state: ResMut<NextState<GameState>>| {
-                next_state.set(GameState::Game);
-            })
+            on(set_state_game)
         })
         .id();
     let credits = commands
@@ -114,4 +112,17 @@ fn setup(mut commands: Commands) {
     commands.entity(title).add_children(&focusable.items);
 
     commands.insert_resource(focusable);
+}
+
+fn set_state_game(
+    _event: On<Activate>,
+    intro: Res<GameIntro>,
+    mut next_state: ResMut<NextState<GameState>>,
+    mut scene: ResMut<NextState<GameScene>>,
+) {
+    next_state.set(GameState::Game);
+    scene.set(match intro.finished {
+        true => GameScene::Game,
+        false => GameScene::Intro,
+    });
 }

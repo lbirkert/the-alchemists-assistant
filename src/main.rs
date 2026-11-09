@@ -10,6 +10,7 @@ mod drawer;
 mod ending;
 mod game_layer;
 mod interaction;
+mod intro;
 mod inventory;
 mod item;
 mod liquid;
@@ -88,7 +89,7 @@ pub fn main() -> AppExit {
         upgrades::plugin,
         sticky_note::plugin,
         sleeping::plugin,
-        ending::plugin,
+        (intro::plugin, ending::plugin),
     ));
     app.add_plugins((
         manager::plugin,

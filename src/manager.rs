@@ -3,7 +3,10 @@ use crate::prelude::*;
 pub fn plugin(app: &mut App) {
     app.insert_resource(GameManager::default());
     app.add_systems(ON_GAME_ENTER, reset_game_manager);
-    app.add_systems(GameUpdate, update_time);
+    app.add_systems(
+        GameUpdate,
+        update_time.run_if(not(in_state(CutScene::Intro))),
+    );
 }
 
 pub const MAX_RECIPES: usize = 3;

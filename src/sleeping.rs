@@ -72,7 +72,7 @@ fn sleep(
         Timer::new(PLAYER_FALL_ASLEEP, TimerMode::Once),
         SleepingState::FallAsleep,
     ));
-    state.set(CutScene(true));
+    state.set(CutScene::Sleeping);
     commands.entity(*overlay).insert(
         BackgroundColor(Color::NONE)
             .ease_to(
@@ -134,7 +134,7 @@ fn update_sleeping(
                 }
                 SleepingState::WakeUp => {
                     sleeping.timer = None;
-                    cut_scene.set(CutScene(false));
+                    cut_scene.set(CutScene::None);
                 }
             }
         }

@@ -22,7 +22,7 @@ pub(super) fn plugin(app: &mut App) {
             fix_fall_to_void,
             player_look
                 .before(player_move)
-                .run_if(not(in_state(CutScene(true)))),
+                .run_if(not(in_state(CutScene::Sleeping))),
         ),
     );
 
@@ -30,7 +30,7 @@ pub(super) fn plugin(app: &mut App) {
         FixedUpdate,
         (
             apply_linear_damping,
-            player_move.run_if(not(in_state(CutScene(true)))),
+            player_move.run_if(in_state(CutScene::None)),
         )
             .chain(),
     );
@@ -46,6 +46,24 @@ pub struct Player;
 #[reflect(Component)]
 /// Marker component for the camera
 pub struct PlayerEyes;
+
+#[derive(Component, Reflect, Default, Clone, Copy)]
+#[reflect(Component)]
+#[component(on_add)]
+#[type_path = "positions"]
+struct PlayerSpawnPos;
+
+impl PlayerSpawnPos {
+    fn on_add(mut world: DeferredWorld, ctx: HookContext) {
+        let pos = world.get::<Transform>(ctx.entity).unwrap().translation;
+        world.commands().run_system_cached_with(
+            |pos: In<Vec3>, mut player_pos: Single<&mut Transform, With<Player>>| {
+                player_pos.translation = pos.0;
+            },
+            pos,
+        );
+    }
+}
 
 #[derive(Component, Reflect, Default, Clone, Copy)]
 #[reflect(Component)]
