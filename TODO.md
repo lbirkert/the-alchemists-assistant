@@ -1,5 +1,4 @@
 # Priority
-- [ ] Intro  cutscene
 - [ ] Title screen background scene
 - [ ] Add sliced flower model
 
@@ -28,3 +27,4 @@
 - [x] Sleeping
 - [x] Credits
 - [x] Settings
+- [x] Intro  cutscene

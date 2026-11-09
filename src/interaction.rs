@@ -22,6 +22,7 @@ pub struct PlayerInteraction {
     pub entity: Entity,
     pub kind: Interactable,
     pub hit: HitData,
+    pub button: MouseButton,
 }
 
 #[derive(Component, Reflect, Debug, Default, Clone, PartialEq, Eq)]
@@ -43,6 +44,7 @@ pub enum Interactable {
     Station,
     Cauldron,
     Door,
+    IntroComputer,
 }
 
 fn interaction(
@@ -66,6 +68,14 @@ fn interaction(
                 entity,
                 kind: interactable.clone(),
                 hit: hit.clone(),
+                button: MouseButton::Right,
+            });
+        } else if input.just_pressed(MouseButton::Left) {
+            messages.write(PlayerInteraction {
+                entity,
+                kind: interactable.clone(),
+                hit: hit.clone(),
+                button: MouseButton::Left,
             });
         }
     } else {

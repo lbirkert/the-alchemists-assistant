@@ -6,6 +6,7 @@ pub fn plugin(app: &mut App) {
     app.init_state::<GameState>();
     app.init_state::<SettingsOpen>();
     app.add_sub_state::<TitleScreenState>();
+    app.add_sub_state::<GameScene>();
     app.add_sub_state::<GamePaused>();
     app.add_sub_state::<CutScene>();
     app.add_sub_state::<MonthFinishedScreen>();
@@ -23,12 +24,21 @@ pub fn plugin(app: &mut App) {
     app.add_systems(GameUpdate, set_paused_state);
 }
 
-#[derive(States, Default, Debug, Hash, Eq, PartialEq, Clone, Copy)]
+#[derive(States, Reflect, Default, Debug, Hash, Eq, PartialEq, Clone, Copy)]
+#[reflect(State)]
 pub enum GameState {
     #[default]
     Title,
     Game,
-    End,
+}
+
+#[derive(SubStates, Reflect, Default, Debug, Hash, Eq, PartialEq, Clone, Copy)]
+#[reflect(State)]
+#[source(GameState = GameState::Game)]
+pub enum GameScene {
+    #[default]
+    Intro,
+    Game,
 }
 
 #[derive(SubStates, Default, Debug, Hash, Eq, PartialEq, Clone, Copy)]
@@ -37,7 +47,12 @@ pub struct GamePaused(pub bool);
 
 #[derive(SubStates, Default, Debug, Hash, Eq, PartialEq, Clone, Copy)]
 #[source(GamePaused = GamePaused(false))]
-pub struct CutScene(pub bool);
+pub enum CutScene {
+    #[default]
+    None,
+    Sleeping,
+    Intro,
+}
 
 #[derive(SubStates, Default, Debug, Hash, Eq, PartialEq, Clone, Copy)]
 #[source(GamePaused = GamePaused(true))]

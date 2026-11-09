@@ -2,6 +2,7 @@ use bevy_easings::CustomComponentEase;
 
 use crate::{
     drawer::Drawer,
+    intro::{ComputerState, GameIntro},
     manager::DayState,
     prelude::*,
     scene::stations::{ProcessingStation, StationState},
@@ -120,16 +121,18 @@ fn setup(mut commands: Commands) {
 
 fn update_hud_text(
     focus: Res<PlayerFocus>,
+    intro: Res<GameIntro>,
     manager: Res<GameManager>,
-    inventory: Single<&Inventory>,
+    inventory: Option<Single<&Inventory>>,
     drawers: Query<&Drawer>,
     mortars: Query<&ProcessingStation>,
     mut text: Single<&mut Text, With<HudText>>,
-    cauldron: Single<&Cauldron>,
+    cauldron: Option<Single<&Cauldron>>,
 ) {
     let value = if let Some((entity, ref interactable)) = focus.interactable {
         match interactable {
-            Interactable::Item(item) => match inventory.selection.as_ref() {
+            Interactable::Item(item) => match inventory.and_then(|i| i.selection.as_ref()).as_ref()
+            {
                 Some(Selection::Item(in_hand)) => format!("[RMB] Swap {item} with {in_hand}"),
                 Some(Selection::StickyNote(note))
                     if note.recipe.is_some() && item.potion.is_some() =>
@@ -145,26 +148,27 @@ fn update_hud_text(
                 Some(Selection::StickyNote(_)) => String::new(),
                 None => format!("[RMB] Pick up {item}"),
             },
-            Interactable::StickyNote(note) => match inventory.selection.as_ref() {
+            Interactable::StickyNote(note) => match inventory.and_then(|i| i.selection.as_ref()) {
                 Some(in_hand) => format!("Already holding {in_hand}"),
                 None => format!("[RMB] Pick up {note}"),
             },
-            Interactable::ItemPlaceable => match inventory.selection.as_ref() {
+            Interactable::ItemPlaceable => match inventory.and_then(|i| i.selection.as_ref()) {
                 Some(Selection::Item(in_hand)) => format!("[RMB] Place {in_hand}"),
                 None | Some(Selection::StickyNote(_)) => String::new(),
             },
-            Interactable::StickyNotePlaceable => match inventory.selection.as_ref() {
+            Interactable::StickyNotePlaceable => match inventory.and_then(|i| i.selection.as_ref())
+            {
                 Some(Selection::StickyNote(note)) => format!("[RMB] Place {note}"),
                 None | Some(Selection::Item(_)) => String::new(),
             },
-            Interactable::ItemDiscardable => match inventory.selection.as_ref() {
+            Interactable::ItemDiscardable => match inventory.and_then(|i| i.selection.as_ref()) {
                 Some(Selection::Item(in_hand)) => format!("[RMB] Discard {in_hand}"),
                 Some(Selection::StickyNote(_)) => {
                     String::from("This is too important to throw away!")
                 }
                 None => String::new(),
             },
-            Interactable::NpcTable => match inventory.selection.as_ref() {
+            Interactable::NpcTable => match inventory.and_then(|i| i.selection.as_ref()) {
                 Some(Selection::Item(item))
                     if item.potion.as_ref().is_some_and(|p| p.recipe.is_some()) =>
                 {
@@ -182,7 +186,7 @@ fn update_hud_text(
                 _ => String::new(),
             },
             Interactable::Bell => String::from("[RMB] Call alchemist"),
-            Interactable::Source { item } => match inventory.selection.as_ref() {
+            Interactable::Source { item } => match inventory.and_then(|i| i.selection.as_ref()) {
                 Some(in_hand) => format!("Already holding {in_hand}"),
                 None => format!("[RMB] Take up {item}"),
             },
@@ -193,7 +197,7 @@ fn update_hud_text(
             }),
             Interactable::Station => {
                 if let Ok(station) = mortars.get(entity) {
-                    match (&station.state, inventory.selection.as_ref()) {
+                    match (&station.state, inventory.and_then(|i| i.selection.as_ref())) {
                         (StationState::Idle, Some(Selection::Item(in_hand))) => {
                             format!("[RMB] {} {in_hand}", station.base_verb(true))
                         }
@@ -225,11 +229,11 @@ fn update_hud_text(
                     String::new()
                 }
             }
-            Interactable::Cauldron => match inventory.selection.as_ref() {
+            Interactable::Cauldron => match inventory.and_then(|i| i.selection.as_ref()) {
                 Some(Selection::Item(item))
                     if item.kind == ItemKind::Potion && item.potion.is_none() =>
                 {
-                    if cauldron.is_empty() {
+                    if cauldron.is_some_and(|c| c.is_empty()) {
                         String::from("Cauldron is empty")
                     } else {
                         String::from("[RMB] Fill Potion")
@@ -241,7 +245,7 @@ fn update_hud_text(
                 Some(Selection::Item(item)) => {
                     debug_assert_eq!(item.kind, ItemKind::Potion);
                     debug_assert!(item.potion.is_some());
-                    match cauldron.is_empty() {
+                    match cauldron.is_some_and(|c| c.is_empty()) {
                         true => String::new(),
                         false => format!("[RMB] {item} is already filled"),
                     }
@@ -251,6 +255,15 @@ fn update_hud_text(
             Interactable::Door => match manager.day_state {
                 DayState::Running | DayState::Started => String::new(),
                 DayState::Ended => String::from("[RMB] Go to sleep"),
+            },
+            Interactable::IntroComputer => match intro.state {
+                ComputerState::News => String::from("[RMB] Find a new job."),
+                ComputerState::FindJob => {
+                    String::from("[LMB] Look at the news\n[RMB] Search for a new job")
+                }
+                ComputerState::Apply => {
+                    String::from("[LMB] Go back\n[RMB] Apply as the alchemist's assistant")
+                }
             },
         }
     } else {
