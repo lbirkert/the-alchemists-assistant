@@ -264,6 +264,7 @@ fn update_hud_text(
                 ComputerState::Apply => {
                     String::from("[LMB] Go back\n[RMB] Apply as the alchemist's assistant")
                 }
+                ComputerState::Finish { .. } => String::new(),
             },
         }
     } else {

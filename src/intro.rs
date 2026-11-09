@@ -1,4 +1,6 @@
-use crate::prelude::*;
+use bevy_easings::EaseMethod;
+
+use crate::{prelude::*, utils::color_overlay::ColorOverlay};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<GameIntro>();
@@ -19,12 +21,15 @@ pub struct GameIntro {
     pub state: ComputerState,
 }
 
-#[derive(Reflect, Default, Clone, Copy)]
+#[derive(Reflect, Default, Clone)]
 pub enum ComputerState {
     #[default]
     News,
     FindJob,
     Apply,
+    Finish {
+        timer: Timer,
+    },
 }
 
 #[derive(Component, Reflect)]
@@ -66,6 +71,7 @@ fn set_state_cut_scene_none(mut cut_scene: ResMut<NextState<CutScene>>) {
 
 fn cycle_textures(
     mut messages: MessageReader<PlayerInteraction>,
+    time: Res<Time>,
     mut commands: Commands,
     mut intro: ResMut<GameIntro>,
     mut scene: ResMut<NextState<GameScene>>,
@@ -73,7 +79,16 @@ fn cycle_textures(
     query: Query<&MeshMaterial3d<StandardMaterial>, With<ComputerScreen>>,
     mut mats: ResMut<Assets<StandardMaterial>>,
     mouse: Option<Single<Entity, With<ComputerMouse>>>,
+    overlay: Single<Entity, With<ColorOverlay>>,
 ) {
+    if let ComputerState::Finish { timer } = &mut intro.state {
+        timer.tick(time.delta());
+        if timer.just_finished() {
+            scene.set(GameScene::Game);
+        }
+        return;
+    }
+
     let Some(PlayerInteraction {
         entity,
         kind: Interactable::IntroComputer,
@@ -88,17 +103,42 @@ fn cycle_textures(
         commands.spawn_scene(audio_scene(*mouse, &["audio/intro/mouse_click.ogg"]));
     }
 
-    intro.state = match (intro.state, button) {
+    intro.state = match (&intro.state, button) {
         (ComputerState::News, MouseButton::Right) => ComputerState::FindJob,
         (ComputerState::FindJob, MouseButton::Right) => ComputerState::Apply,
         (ComputerState::FindJob, MouseButton::Left) => ComputerState::News,
         (ComputerState::Apply, MouseButton::Left) => ComputerState::FindJob,
         (ComputerState::Apply, MouseButton::Right) => {
             intro.finished = true;
-            scene.set(GameScene::Game);
-            ComputerState::Apply
+            commands.entity(*overlay).insert(
+                BackgroundColor(Color::NONE)
+                    .ease_to(
+                        BackgroundColor(Color::BLACK),
+                        EaseFunction::CubicIn,
+                        EasingType::Once {
+                            duration: Duration::from_secs(1),
+                        },
+                    )
+                    .ease_to(
+                        BackgroundColor(Color::BLACK),
+                        EaseMethod::Linear,
+                        EasingType::Once {
+                            duration: Duration::from_secs(2),
+                        },
+                    )
+                    .ease_to(
+                        BackgroundColor(Color::NONE),
+                        EaseFunction::CubicOut,
+                        EasingType::Once {
+                            duration: Duration::from_secs(2),
+                        },
+                    ),
+            );
+            ComputerState::Finish {
+                timer: Timer::new(Duration::from_secs(1), TimerMode::Once),
+            }
         }
-        _ => intro.state,
+        _ => return,
     };
 
     if let Ok(mat) = query.get(*entity)
@@ -107,7 +147,7 @@ fn cycle_textures(
         let path = match intro.state {
             ComputerState::News => "IntroNews.png",
             ComputerState::FindJob => "IntroJobPortal.png",
-            ComputerState::Apply => "IntroApply.png",
+            ComputerState::Apply | ComputerState::Finish { .. } => "IntroApply.png",
         };
         let handle = asset_server.load(path);
         mat.base_color_texture = Some(handle.clone());

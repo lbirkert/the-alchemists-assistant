@@ -91,6 +91,10 @@ fn setup(mut commands: Commands) {
 
     commands.spawn_scene(bsn! {
         Text::new("The Alchemist's Assistant".to_string())
+        Node {
+            position_type: PositionType::Absolute,
+            bottom: px(20)
+        }
         DespawnOnExit::<TitleScreenState>(TitleScreenState::MainMenu)
         ChildOf(title)
     });
