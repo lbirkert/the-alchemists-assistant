@@ -25,11 +25,13 @@ impl Cauldron {
 
 fn add_item_to_cauldron(
     mut messages: MessageReader<PlayerInteraction>,
+    mut commands: Commands,
     mut inventory: Single<&mut Inventory>,
     mut cauldron: Single<&mut Cauldron>,
 ) {
     let Some(PlayerInteraction {
         kind: Interactable::Cauldron,
+        entity,
         ..
     }) = messages.read().next()
     else {
@@ -54,6 +56,17 @@ fn add_item_to_cauldron(
     };
 
     cauldron.items.push(item);
+
+    commands.spawn_scene(audio_scene(
+        *entity,
+        &[
+            "audio/cauldron/cauldron_drop.ogg",
+            "audio/cauldron/cauldron_drop_2.ogg",
+            "audio/cauldron/cauldron_drop_3.ogg",
+            "audio/cauldron/cauldron_drop_4.ogg",
+            "audio/cauldron/cauldron_drop_5.ogg",
+        ],
+    ));
 }
 
 fn update_cauldron_color(mut query: Single<(&mut LiquidController, &Cauldron), Changed<Cauldron>>) {
