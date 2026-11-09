@@ -118,20 +118,16 @@ impl Recipe {
         let mut ingredients = Vec::new();
         for is_washed in washed.iter().copied() {
             for state in states.iter().copied() {
-                if upgrades.item_is_locked(&Item {
-                    kind,
-                    state,
-                    is_washed,
-                    potion: None,
-                }) {
-                    continue;
-                }
                 let item = Item {
                     kind,
                     is_washed,
                     state,
                     potion: None,
                 };
+
+                if upgrades.item_is_locked(&item) {
+                    continue;
+                }
                 ingredients.push(Ingredient {
                     steps_description: Self::steps_description(&item),
                     item,
@@ -149,6 +145,7 @@ impl Recipe {
             ItemState::Grinded,
             ItemState::FineGrinded,
         ];
+
         Self::gather_ingredients(upgrades, ItemKind::Crystal, &IS_WASHED, &STATES)
     }
 
@@ -160,6 +157,7 @@ impl Recipe {
             ItemState::Grinded,
             ItemState::FineGrinded,
         ];
+
         Self::gather_ingredients(upgrades, ItemKind::Garlic, &IS_WASHED, &STATES)
     }
 
@@ -172,6 +170,13 @@ impl Recipe {
         ];
 
         Self::gather_ingredients(upgrades, ItemKind::Flowers, &IS_WASHED, &STATES)
+    }
+
+    fn get_grass_ingredients(upgrades: &GameUpgrades) -> Vec<Ingredient> {
+        const IS_WASHED: [bool; 2] = [true, false];
+        const STATES: [ItemState; 1] = [ItemState::Unprocessed];
+
+        Self::gather_ingredients(upgrades, ItemKind::Grass, &IS_WASHED, &STATES)
     }
 
     fn push_if_not_empty(src: Vec<Ingredient>, dst: &mut Vec<Vec<Ingredient>>) {
@@ -187,6 +192,7 @@ impl Recipe {
         Self::push_if_not_empty(Self::get_garlic_ingredients(upgrades), &mut ingredients);
         Self::push_if_not_empty(Self::get_flower_ingredients(upgrades), &mut ingredients);
         Self::push_if_not_empty(Self::get_crystal_ingredients(upgrades), &mut ingredients);
+        Self::push_if_not_empty(Self::get_grass_ingredients(upgrades), &mut ingredients);
         ingredients
     }
 
