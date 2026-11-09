@@ -235,16 +235,20 @@ fn pickup_item_from_source(
         return;
     }
 
-    if source.kind == ItemKind::Potion {
-        commands.spawn_scene(audio_scene(
-            *entity,
-            &[
-                "audio/potion/potion_take_1.ogg",
-                "audio/potion/potion_take_2.ogg",
-                "audio/potion/potion_take_3.ogg",
-            ],
-        ));
-    }
+    let audio_sources: &[&str] = match source.kind {
+        ItemKind::Potion => &[
+            "audio/potion/potion_take_1.ogg",
+            "audio/potion/potion_take_2.ogg",
+            "audio/potion/potion_take_3.ogg",
+        ],
+        _ => &[
+            "audio/item/item_pickup_1.ogg",
+            "audio/item/item_pickup_2.ogg",
+            "audio/item/item_pickup_3.ogg",
+            "audio/item/item_pickup_4.ogg",
+        ],
+    };
+    commands.spawn_scene(audio_scene(*entity, audio_sources));
 
     inventory.selection = Some(Selection::Item(source.clone()));
 }
@@ -324,13 +328,18 @@ pub fn pickup_item(
         // Destroy the focused item, we already put it in the inventory
         commands.entity(*entity).despawn();
 
-        let audio_sources = match item.kind {
+        let audio_sources: &[&str] = match item.kind {
             ItemKind::Potion => &[
                 "audio/potion/potion_take_1.ogg",
                 "audio/potion/potion_take_2.ogg",
                 "audio/potion/potion_take_3.ogg",
             ],
-            _ => return,
+            _ => &[
+                "audio/item/item_pickup_1.ogg",
+                "audio/item/item_pickup_2.ogg",
+                "audio/item/item_pickup_3.ogg",
+                "audio/item/item_pickup_4.ogg",
+            ],
         };
         commands.spawn_scene(audio_scene_at(item_transform.translation, audio_sources));
     }
@@ -364,20 +373,34 @@ fn place_item(
         return;
     };
 
+    let audio_sources: &[&str] = match item.kind {
+        ItemKind::Potion => &[
+            "audio/potion/potion_place_1.ogg",
+            "audio/potion/potion_place_2.ogg",
+        ],
+        ItemKind::Crystal => &[
+            "audio/item/item_place_crystal_1.ogg",
+            "audio/item/item_place_crystal_2.ogg",
+            "audio/item/item_place_crystal_3.ogg",
+            "audio/item/item_place_crystal_4.ogg",
+            "audio/item/item_place_crystal_5.ogg",
+        ],
+        _ => &[
+            "audio/item/item_place_1.ogg",
+            "audio/item/item_place_2.ogg",
+            "audio/item/item_place_3.ogg",
+            "audio/item/item_place_4.ogg",
+            "audio/item/item_place_5.ogg",
+        ],
+    };
+    commands.spawn_scene(audio_scene_at(*position, audio_sources));
+
     let item_scene = item.physics_scene(
         &assets_server,
         Transform::from_translation(position + normal * ITEM_SIZE / 2.0),
         Vec3::ZERO,
     );
     commands.spawn_scene(item_scene);
-
-    commands.spawn_scene(audio_scene_at(
-        *position,
-        &[
-            "audio/potion/potion_place_1.ogg",
-            "audio/potion/potion_place_2.ogg",
-        ],
-    ));
 }
 
 fn discard_item(
