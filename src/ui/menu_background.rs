@@ -63,10 +63,25 @@ fn set_npc_animation(
         &mut AnimationPlayer,
         &mut AnimationTransitions,
     )>,
+    right_hand: Option<Single<Entity, With<NpcRightHand>>>,
     mut npc_initialized: ResMut<NpcInitialized>,
 ) {
     if npc_initialized.0 {
         return;
+    }
+
+    if let Some(hand) = right_hand {
+        commands.spawn_scene_list(bsn_list! {
+            ChildOf({*hand})
+            Transform
+            AudioPlayer("audio/cauldron/cauldron_boiling.ogg")
+            PlaybackSettings::LOOP.with_spatial(true)
+            --
+            ChildOf({*hand})
+            Transform
+            AudioPlayer("audio/cauldron/cauldron_stir.ogg")
+            PlaybackSettings::LOOP.with_spatial(true)
+        });
     }
 
     let (animations, animation_player, animation_transitions) = &mut *armature;
