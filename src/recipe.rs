@@ -90,15 +90,21 @@ const CONTINUE_PREFIXES: [&str; 6] = [
 ];
 
 impl Recipe {
-    fn steps_description(state: &ItemState, is_washed: bool) -> &'static str {
-        match (is_washed, state) {
+    fn steps_description(item: &Item) -> &'static str {
+        match (item.is_washed, item.state) {
             (false, ItemState::Unprocessed) => "Just add to the cauldron.",
             (false, ItemState::Sliced) => "Slice and add to the cauldron.",
             (false, ItemState::Grinded) => "Grind and add to the cauldron.",
+            (false, ItemState::FineGrinded) if item.kind == ItemKind::Flowers => {
+                "Slice, then grind fine! and add to the cauldron."
+            }
             (false, ItemState::FineGrinded) => "Grind fine! and add to the cauldron.",
             (true, ItemState::Unprocessed) => "Wash and add to the cauldron.",
             (true, ItemState::Sliced) => "Wash, slice and add to the cauldron.",
             (true, ItemState::Grinded) => "Wash, grind and add to the cauldron.",
+            (true, ItemState::FineGrinded) if item.kind == ItemKind::Flowers => {
+                "Wash, slice, then grind fine! and add to the cauldron."
+            }
             (true, ItemState::FineGrinded) => "Wash, grind fine! and add to the cauldron.",
         }
     }
@@ -120,14 +126,15 @@ impl Recipe {
                 }) {
                     continue;
                 }
+                let item = Item {
+                    kind,
+                    is_washed,
+                    state,
+                    potion: None,
+                };
                 ingredients.push(Ingredient {
-                    steps_description: Self::steps_description(&state, is_washed),
-                    item: Item {
-                        kind,
-                        is_washed,
-                        state,
-                        potion: None,
-                    },
+                    steps_description: Self::steps_description(&item),
+                    item,
                 });
             }
         }
