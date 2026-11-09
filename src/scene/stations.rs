@@ -72,7 +72,7 @@ impl ProcessingStation {
         match self.kind {
             Station::Mortar => 2,
             Station::CuttingBoard => 2,
-            Station::WaterTap => unimplemented!(),
+            Station::WaterTap => 1,
         }
     }
 
@@ -80,7 +80,7 @@ impl ProcessingStation {
         match self.kind {
             Station::Mortar => "Mortar.glb",
             Station::CuttingBoard => "CuttingBoard.glb",
-            Station::WaterTap => unimplemented!(),
+            Station::WaterTap => "WaterTap.glb",
         }
     }
 
@@ -107,7 +107,7 @@ impl ProcessingStation {
         match self.kind {
             Station::Mortar => handle.animations.first(),
             Station::CuttingBoard => handle.animations.get(1),
-            Station::WaterTap => unimplemented!(),
+            Station::WaterTap => handle.animations.first(),
         }
         .copied()
     }
@@ -116,7 +116,7 @@ impl ProcessingStation {
         match self.kind {
             Station::Mortar => handle.animations.get(1),
             Station::CuttingBoard => handle.animations.first(),
-            Station::WaterTap => unimplemented!(),
+            Station::WaterTap => handle.animations.first(),
         }
         .copied()
     }
@@ -127,7 +127,7 @@ impl Station {
         match self {
             Station::Mortar => self.pestle_item(item),
             Station::CuttingBoard => self.cut_item(item),
-            Station::WaterTap => unimplemented!(),
+            Station::WaterTap => self.wash_item(item),
         }
     }
 
@@ -154,6 +154,16 @@ impl Station {
                 kind: ItemKind::Garlic | ItemKind::Flowers,
                 ..
             } => item.sliced(),
+            _ => item,
+        }
+    }
+
+    fn wash_item(&self, item: Item) -> Item {
+        match item {
+            Item {
+                state: ItemState::Unprocessed,
+                ..
+            } => item.washed(),
             _ => item,
         }
     }
