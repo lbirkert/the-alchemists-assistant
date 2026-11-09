@@ -145,6 +145,7 @@ impl PotionReport {
 
 fn fill_potion(
     mut messages: MessageReader<PlayerInteraction>,
+    mut statistics: ResMut<Statistics>,
     mut inventory: Single<&mut Inventory>,
     mut cauldron: Single<&mut Cauldron>,
 ) {
@@ -181,6 +182,7 @@ fn fill_potion(
         potion: Some(potion),
         ..Default::default()
     }));
+    statistics.fill_potion();
 }
 
 fn label_potion(

@@ -32,6 +32,10 @@ impl Statistics {
         self.items_processed += 1;
         *self.item_counts.entry(item).or_default() += 1;
     }
+
+    pub fn fill_potion(&mut self) {
+        self.potions_brewed += 1;
+    }
 }
 
 #[derive(Resource, Reflect)]

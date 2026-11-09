@@ -1,4 +1,5 @@
 # Priority
+- [ ] flower grinding
 
 ## Npc
 - [ ] Add more farewell messages
@@ -28,3 +29,4 @@
 - [x] Add sliced flower model
 - [x] Add invalid potion messages
 - [x] Change sliced garlic model to fit into mortar.
+- [x] water tap unlock
