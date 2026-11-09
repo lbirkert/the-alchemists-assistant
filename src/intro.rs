@@ -39,6 +39,23 @@ struct ComputerScreen;
 #[type_path = "scene"]
 struct ComputerMouse;
 
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+#[component(on_add)]
+#[type_path = "scene"]
+struct IntroNoise;
+
+impl IntroNoise {
+    fn on_add(mut world: DeferredWorld, ctx: HookContext) {
+        world.commands().spawn_scene(bsn! {
+            ChildOf({ctx.entity})
+            Transform
+            AudioPlayer("audio/intro/intro_noise.ogg")
+            PlaybackSettings::LOOP.with_spatial(true)
+        });
+    }
+}
+
 fn set_state_cut_scene(mut cut_scene: ResMut<NextState<CutScene>>) {
     cut_scene.set(CutScene::Intro);
 }
