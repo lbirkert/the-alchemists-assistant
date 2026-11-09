@@ -4,7 +4,7 @@ use crate::{item::ITEM_SIZE, prelude::*, scene::NpcTable};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(GameUpdate, fill_potion);
-    app.add_systems(GameUpdate, label_potion.after(crate::item::pickup_item));
+    app.add_systems(GameUpdate, label_potion.before(crate::item::pickup_item));
     app.add_systems(GameUpdate, submit_potion);
 }
 
@@ -213,6 +213,8 @@ fn label_potion(
     };
 
     potion.recipe = sticky_note.recipe.clone();
+
+    info!("update potion: {:?}", item);
 
     // update potion (so that sticky note shows)
     commands
