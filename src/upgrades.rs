@@ -203,6 +203,7 @@ fn hide_locked_things(
 
 fn check_upgrade_requirements(
     statistics: Res<Statistics>,
+    mut commands: Commands,
     mut upgrades: ResMut<GameUpgrades>,
     mut unlock_messages: MessageWriter<NewUnlock>,
     sources: Query<(&ItemSource, &mut Visibility), Without<ProcessingStation>>,
@@ -216,6 +217,7 @@ fn check_upgrade_requirements(
             && requirements.iter().all(|r| r.is_satisfied(&statistics))
         {
             *state = UpgradeState::Unlocked;
+            commands.spawn_scene(audio_scene_not_spatial(&["audio/bottle_opening.ogg"]));
             unlock_messages.write(NewUnlock::Item(*item));
         }
     }
@@ -228,6 +230,7 @@ fn check_upgrade_requirements(
             && requirements.iter().all(|r| r.is_satisfied(&statistics))
         {
             *state = UpgradeState::Unlocked;
+            commands.spawn_scene(audio_scene_not_spatial(&["audio/bottle_opening.ogg"]));
             unlock_messages.write(NewUnlock::Station(*station));
         }
     }

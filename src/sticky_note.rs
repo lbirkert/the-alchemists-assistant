@@ -101,6 +101,7 @@ fn pickup_sticky_note(
     mut commands: Commands,
     mut messages: MessageReader<PlayerInteraction>,
     mut inventory: Single<&mut Inventory>,
+    transforms: Query<&Transform>,
 ) {
     let Some(PlayerInteraction {
         entity,
@@ -113,6 +114,13 @@ fn pickup_sticky_note(
 
     if inventory.selection.is_some() {
         return;
+    }
+
+    if let Ok(transform) = transforms.get(*entity) {
+        commands.spawn_scene(audio_scene_at(
+            transform.translation,
+            &["audio/sticky_note/sticky_note_pick_up.ogg"],
+        ));
     }
 
     inventory.selection = Some(Selection::StickyNote(note.clone()));
@@ -157,7 +165,15 @@ fn place_sticky_note(
         &asset_server,
         Transform::from_translation(*position).with_rotation(rotation),
     );
-    commands.spawn_scene(scene);
+    let note_entity = commands.spawn_scene(scene).id();
+
+    commands.spawn_scene(audio_scene(
+        note_entity,
+        &[
+            "audio/sticky_note/sticky_note_place_1.ogg",
+            "audio/sticky_note/sticky_note_place_2.ogg",
+        ],
+    ));
 }
 
 fn set_sticky_note_texture(

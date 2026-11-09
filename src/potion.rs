@@ -218,6 +218,14 @@ fn label_potion(
     commands
         .entity(*entity)
         .insert((Interactable::Item(item.clone()), item));
+
+    commands.spawn_scene(audio_scene(
+        *entity,
+        &[
+            "audio/sticky_note/sticky_note_place_1.ogg",
+            "audio/sticky_note/sticky_note_place_2.ogg",
+        ],
+    ));
 }
 
 fn submit_potion(
