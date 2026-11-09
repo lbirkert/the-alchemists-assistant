@@ -214,8 +214,6 @@ fn label_potion(
 
     potion.recipe = sticky_note.recipe.clone();
 
-    info!("update potion: {:?}", item);
-
     // update potion (so that sticky note shows)
     commands
         .entity(*entity)

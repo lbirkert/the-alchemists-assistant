@@ -314,8 +314,6 @@ pub fn pickup_item(
         return;
     }
 
-    info!("picking up, with item in hand: {:?}", inventory.selection);
-
     if let Ok(item_transform) = transforms.get(*entity) {
         let old_item = inventory.selection.replace(Selection::Item(item.clone()));
         match old_item {
