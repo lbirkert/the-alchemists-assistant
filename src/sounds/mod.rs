@@ -2,6 +2,7 @@ use bevy::audio::Volume;
 
 use crate::prelude::*;
 
+mod cauldron;
 mod drawer;
 pub mod movement;
 mod npc;
@@ -13,6 +14,7 @@ pub(super) fn plugin(app: &mut App) {
         drawer::plugin,
         station::plugin,
         npc::plugin,
+        cauldron::plugin,
     ));
 }
 
