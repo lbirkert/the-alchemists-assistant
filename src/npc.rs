@@ -408,8 +408,7 @@ struct NpcPosInsideSpeakToPlayer;
 #[type_path = "the_alchemist_assistant::npc"]
 struct NpcPosInsideInteractWithTable;
 
-#[derive(Component, Reflect, Default, Debug, Clone)]
-#[reflect(Component)]
+#[derive(Component, Default, Debug, Clone)]
 struct NpcTargetPositions {
     outside: Vec3,
     inside_speak: Vec3,
@@ -549,6 +548,8 @@ fn update_npc_animation(
 struct NpcSpeechText;
 
 fn npc_speech_scene(world: &mut DeferredWorld) -> impl Scene {
+    let current_state = *world.resource::<State<GameState>>().get();
+
     // This is the texture that will be rendered to.
     let image = Image::new_target_texture(
         1024,
@@ -572,7 +573,7 @@ fn npc_speech_scene(world: &mut DeferredWorld) -> impl Scene {
                 ..default()
             },
             bevy::camera::RenderTarget::Image(image_handle.clone().into()),
-            DespawnOnExit(GameState::Game),
+            DespawnOnExit(current_state),
         ))
         .id();
 
@@ -587,7 +588,7 @@ fn npc_speech_scene(world: &mut DeferredWorld) -> impl Scene {
             align_items: AlignItems::Center,
         }
         UiTargetCamera(texture_camera)
-        DespawnOnExit::<GameState>(GameState::Game)
+        DespawnOnExit::<GameState>(current_state)
         Children [
             #NpcSpeechText
             Text::new("")

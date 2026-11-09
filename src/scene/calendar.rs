@@ -20,6 +20,8 @@ struct CalendarBlockDayText;
 
 impl CalendarBlock {
     fn on_add(mut world: DeferredWorld, ctx: HookContext) {
+        let current_state = *world.resource::<State<GameState>>().get();
+
         // This is the texture that will be rendered to.
         let image = Image::new_target_texture(
             256,
@@ -43,7 +45,7 @@ impl CalendarBlock {
                     ..default()
                 },
                 bevy::camera::RenderTarget::Image(image_handle.clone().into()),
-                DespawnOnExit(GameState::Game),
+                DespawnOnExit(current_state),
             ))
             .id();
 
@@ -63,7 +65,7 @@ impl CalendarBlock {
                 align_items: AlignItems::Center,
             }
             UiTargetCamera(texture_camera)
-            DespawnOnExit::<GameState>(GameState::Game)
+            DespawnOnExit::<GameState>(current_state)
             Children [
                 #CalendarBlockWeekdayText
                 Text::new("")

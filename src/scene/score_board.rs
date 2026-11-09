@@ -19,6 +19,8 @@ struct ScoreBoardCell {
 
 impl ScoreBoard {
     fn on_add(mut world: DeferredWorld, ctx: HookContext) {
+        let current_state = *world.resource::<State<GameState>>().get();
+
         let width = 676;
         let height = 512;
 
@@ -45,7 +47,7 @@ impl ScoreBoard {
                     ..default()
                 },
                 bevy::camera::RenderTarget::Image(image_handle.clone().into()),
-                DespawnOnExit(GameState::Game),
+                DespawnOnExit(current_state),
             ))
             .id();
 
@@ -63,7 +65,7 @@ impl ScoreBoard {
                     grid_template_rows: RepeatedGridTrack::flex::<Vec<_>>(5, 1.0),
                 }
                 UiTargetCamera(texture_camera)
-                DespawnOnExit::<GameState>(GameState::Game)
+                DespawnOnExit::<GameState>(current_state)
             })
             .id();
 
