@@ -120,7 +120,7 @@ impl Default for GameUpgrades {
                         ItemKind::Grass => UpgradeState::locked([UnlockCondition::item(
                             Item {
                                 kind: ItemKind::Flowers,
-                                state: ItemState::Grinded,
+                                state: ItemState::FineGrinded,
                                 is_washed: false,
                                 potion: None,
                             },
