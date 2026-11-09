@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> Changes (fixes) on this branch (dev) are made after the submission period of the bevy jam ended. Please ignore them!
+
 # The Alchemist Assistant
 
 ... is a game created by @faervan and @lbirkert in 9 Days
