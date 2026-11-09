@@ -6,7 +6,7 @@ pub fn plugin(app: &mut App) {
     app.add_message::<PlayerInteraction>();
     app.init_resource::<PlayerFocus>();
 
-    app.add_systems(GameUpdate, interaction);
+    app.add_systems(GamePostUpdate, interaction);
 }
 
 #[derive(Resource, Reflect, Debug, Default)]
