@@ -3,7 +3,7 @@ use bevy::picking::backend::HitData;
 use crate::{prelude::*, scene::stations::Station};
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(GameUpdate, (pickup_item, update_recipe_for_potion).chain());
+    app.add_systems(GameUpdate, update_recipe_for_potion);
     app.add_systems(GameUpdate, pickup_item_from_source);
     app.add_systems(GameUpdate, place_item);
     app.add_systems(GameUpdate, discard_item);

@@ -4,7 +4,10 @@ use crate::{item::ITEM_SIZE, prelude::*, scene::NpcTable};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(GameUpdate, fill_potion);
-    app.add_systems(GameUpdate, label_potion.before(crate::item::pickup_item));
+    app.add_systems(
+        GameUpdate,
+        (label_potion, ApplyDeferred, crate::item::pickup_item).chain(),
+    );
     app.add_systems(GameUpdate, submit_potion);
 }
 
@@ -208,7 +211,7 @@ fn label_potion(
         return;
     };
 
-    let Some(Selection::StickyNote(sticky_note)) = inventory.selection.take() else {
+    let Some(Selection::StickyNote(sticky_note)) = inventory.selection.as_ref() else {
         panic!();
     };
 
@@ -218,6 +221,8 @@ fn label_potion(
     commands
         .entity(*entity)
         .insert((Interactable::Item(item.clone()), item));
+
+    inventory.selection = None;
 
     commands.spawn_scene(audio_scene(
         *entity,
