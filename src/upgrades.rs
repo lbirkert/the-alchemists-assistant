@@ -138,7 +138,9 @@ impl Default for GameUpgrades {
                         Station::Mortar => {
                             UpgradeState::locked([UnlockCondition::TotalItemsProcessed(5)])
                         }
-                        Station::WaterTap => UpgradeState::unimplemented(),
+                        Station::WaterTap => {
+                            UpgradeState::locked([UnlockCondition::TotalPotionsBrewed(5)])
+                        }
                     },
                 )
             })

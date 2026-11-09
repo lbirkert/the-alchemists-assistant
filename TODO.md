@@ -1,10 +1,7 @@
 # Priority
-- [ ] Title screen background scene
-- [ ] Add sliced flower model
 
 ## Npc
 - [ ] Add more farewell messages
-- [ ] Add invalid potion messages
 
 # Nice-To-Have
 - [ ] Audio fade out when entering settings/menu
@@ -14,7 +11,6 @@
 - [ ] Cauldron visuals / audio
 - [ ] Extra animation for mortar stomping
 - [ ] Music
-- [ ] Change sliced garlic model to fit into mortar.
 
 # Done
 - [x] Restrict recipes to unlocked recipes/stations
@@ -28,3 +24,7 @@
 - [x] Credits
 - [x] Settings
 - [x] Intro  cutscene
+- [x] Title screen background scene
+- [x] Add sliced flower model
+- [x] Add invalid potion messages
+- [x] Change sliced garlic model to fit into mortar.

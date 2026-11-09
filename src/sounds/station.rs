@@ -31,7 +31,7 @@ fn add_station_audio(
         let source = match station.kind {
             Station::CuttingBoard => CUT_SOURCE,
             Station::Mortar => PESTLE_SOURCE,
-            Station::WaterTap => unimplemented!(),
+            Station::WaterTap => WATER_SOURCE,
         };
         commands.entity(entity).apply_scene(bsn! {
             StationAudio
@@ -97,3 +97,5 @@ const CUT_SOURCE: &str = "audio/cutting_board/cutting_1.ogg";
 const _FINE_CUT_SOURCE: &str = "audio/cutting_board/cutting_2.ogg";
 
 const PESTLE_SOURCE: &str = "audio/mortar/mortar_1.ogg";
+
+const WATER_SOURCE: &str = "audio/water_tap/water_tap.ogg";
