@@ -6,7 +6,7 @@ pub fn plugin(app: &mut App) {
     app.add_systems(GameUpdate, fill_potion);
     app.add_systems(
         GameUpdate,
-        (label_potion, ApplyDeferred, crate::item::pickup_item).chain(),
+        (crate::item::pickup_item, label_potion, ApplyDeferred).chain(),
     );
     app.add_systems(GameUpdate, submit_potion);
 }
