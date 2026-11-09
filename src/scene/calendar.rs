@@ -110,7 +110,7 @@ impl CalendarBlock {
 
 fn update_calendar_text(
     manager: Res<GameManager>,
-    mut next_day: Local<usize>,
+    mut update: Local<usize>,
     week_days: Query<&mut Text, With<CalendarBlockWeekdayText>>,
     days: Query<
         &mut Text,
@@ -120,11 +120,13 @@ fn update_calendar_text(
         ),
     >,
 ) {
-    // Only update when a new day has started.
-    if manager.day < *next_day {
+    // Only update every once in a while.
+    if *update == 0 {
+        *update = 100;
+    } else {
+        *update -= 1;
         return;
     }
-    *next_day += 1;
 
     for mut text in week_days {
         text.0 = manager.game_week_day().to_string();

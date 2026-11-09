@@ -145,14 +145,16 @@ fn text_scene<S: Into<String> + Send + Sync + 'static>(text: S, parent: Entity) 
 fn update_score_board_text(
     manager: Res<GameManager>,
     mut commands: Commands,
-    mut next_day: Local<usize>,
+    mut update: Local<usize>,
     cells: Query<(Entity, &ScoreBoardCell)>,
 ) {
-    // Only update when a new day has started.
-    if manager.day < *next_day {
+    // Only update every once in a while.
+    if *update == 0 {
+        *update = 100;
+    } else {
+        *update -= 1;
         return;
     }
-    *next_day += 1;
 
     for (entity, cell) in cells {
         if cell.row > 4 || cell.column > 6 {
