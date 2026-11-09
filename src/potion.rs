@@ -272,6 +272,14 @@ fn submit_potion(
         Transform::from_translation(*position + *normal * (ITEM_SIZE / 2.0)),
     );
 
+    commands.spawn_scene(audio_scene_at(
+        *position,
+        &[
+            "audio/potion/potion_place_1.ogg",
+            "audio/potion/potion_place_2.ogg",
+        ],
+    ));
+
     let potion_entity = commands.spawn_scene(scene).id();
     npc_table
         .potions

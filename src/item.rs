@@ -219,10 +219,12 @@ impl ItemState {
 
 fn pickup_item_from_source(
     mut messages: MessageReader<PlayerInteraction>,
+    mut commands: Commands,
     mut inventory: Single<&mut Inventory>,
 ) {
     let Some(PlayerInteraction {
         kind: Interactable::Source { item: source },
+        entity,
         ..
     }) = messages.read().next()
     else {
@@ -231,6 +233,17 @@ fn pickup_item_from_source(
 
     if inventory.selection.is_some() {
         return;
+    }
+
+    if source.kind == ItemKind::Potion {
+        commands.spawn_scene(audio_scene(
+            *entity,
+            &[
+                "audio/potion/potion_take_1.ogg",
+                "audio/potion/potion_take_2.ogg",
+                "audio/potion/potion_take_3.ogg",
+            ],
+        ));
     }
 
     inventory.selection = Some(Selection::Item(source.clone()));
@@ -310,6 +323,16 @@ pub fn pickup_item(
         }
         // Destroy the focused item, we already put it in the inventory
         commands.entity(*entity).despawn();
+
+        let audio_sources = match item.kind {
+            ItemKind::Potion => &[
+                "audio/potion/potion_take_1.ogg",
+                "audio/potion/potion_take_2.ogg",
+                "audio/potion/potion_take_3.ogg",
+            ],
+            _ => return,
+        };
+        commands.spawn_scene(audio_scene_at(item_transform.translation, audio_sources));
     }
 }
 
@@ -347,6 +370,14 @@ fn place_item(
         Vec3::ZERO,
     );
     commands.spawn_scene(item_scene);
+
+    commands.spawn_scene(audio_scene_at(
+        *position,
+        &[
+            "audio/potion/potion_place_1.ogg",
+            "audio/potion/potion_place_2.ogg",
+        ],
+    ));
 }
 
 fn discard_item(
