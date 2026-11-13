@@ -390,12 +390,13 @@ fn walk_npc(transform: &mut Transform, time: &Time, target_pos: Vec3) -> bool {
     const NPC_SPEED: f32 = 2.0;
 
     let delta = target_pos - transform.translation;
-    if delta.length_squared() < 1e-3 {
-        return true;
-    }
 
     let dt = time.delta().as_secs_f32();
-    let movement = delta.normalize() * dt * NPC_SPEED;
+    let movement = delta.normalize_or_zero() * dt * NPC_SPEED;
+    if movement.length_squared() + 1e-3 > delta.length_squared() {
+        transform.translation = target_pos;
+        return true;
+    }
     transform.translation += movement;
 
     false
